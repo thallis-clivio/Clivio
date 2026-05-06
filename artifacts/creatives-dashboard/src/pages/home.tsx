@@ -268,6 +268,9 @@ export default function Home() {
   const { data: creatives, isLoading: isCreativesLoading } = useListCreatives(creativeParams, {
     query: { queryKey: getListCreativesQueryKey(creativeParams) }
   });
+  const { data: allCreatives } = useListCreatives({ dateFilter: "all" }, {
+    query: { queryKey: getListCreativesQueryKey({ dateFilter: "all" }) }
+  });
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary(dashParams, {
     query: { queryKey: getGetDashboardSummaryQueryKey(dashParams) }
   });
@@ -338,7 +341,7 @@ export default function Home() {
                         <SelectValue placeholder="Selecione o criativo..." />
                       </SelectTrigger>
                       <SelectContent>
-                        {creatives?.map(c => (
+                        {allCreatives?.map(c => (
                           <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                         ))}
                       </SelectContent>
