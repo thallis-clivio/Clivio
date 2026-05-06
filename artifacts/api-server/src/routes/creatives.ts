@@ -39,11 +39,11 @@ function computeTotalSales(c: {
   return c.sales5m + c.sales7m + c.sales9m + c.sales12m + c.sales16m + c.sales20m;
 }
 
-function computeDecision(roas: number, daysWithoutSales: number): "ESCALAR" | "MONITORAR" | "OTIMIZAR" | "PAUSAR" {
+function computeDecision(roas: number, cpa: number, daysWithoutSales: number): "ESCALAR" | "MONITORAR" | "OTIMIZAR" | "PAUSAR" {
   if (daysWithoutSales >= 2) return "PAUSAR";
   if (roas >= 2) return "ESCALAR";
-  if (roas >= 1.5) return "MONITORAR";
-  if (roas >= 1) return "OTIMIZAR";
+  // ROAS < 2: use CPA as tiebreaker
+  if (cpa <= 100) return "OTIMIZAR";
   return "PAUSAR";
 }
 
@@ -109,7 +109,7 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
   const totalSales = computeTotalSales(c);
   const roas = c.spend > 0 ? Math.round((commission / c.spend) * 100) / 100 : 0;
   const cpa = totalSales > 0 ? Math.round((c.spend / totalSales) * 100) / 100 : 0;
-  const decision = computeDecision(roas, c.daysWithoutSales);
+  const decision = computeDecision(roas, cpa, c.daysWithoutSales);
   const { score: predictabilityScore, label: predictabilityLabel } = computePredictability(roas, cpa, c.daysWithoutSales, totalSales);
   return {
     id: c.id,

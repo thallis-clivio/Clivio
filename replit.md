@@ -36,7 +36,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 
 - Commission computed server-side (5m×$217, 7m×$300, 9m×$380, 12m×$460, 16m×$520, 20m×$650)
 - ROAS = commission / spend; CPA = spend / totalSales; both computed at read time (not stored)
-- Decision override: daysWithoutSales >= 2 always forces PAUSAR regardless of ROAS
+- Decision logic: daysWithoutSales >= 2 → PAUSAR (override); else ROAS >= 2 → ESCALAR; else CPA <= 100 → OTIMIZAR; else PAUSAR. MONITORAR is never generated.
 - `hookRate` column kept in DB (`real NOT NULL DEFAULT 0`), omitted from `insertCreativeSchema` and removed from API request body
 - Predictability score (0–100) = consistency (0–40) + ROAS quality (0–35) + CPA efficiency (0–25)
 - AI analysis is rule-based (no external LLM call) — fast, zero cost, no API key needed
