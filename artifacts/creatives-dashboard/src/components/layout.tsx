@@ -16,8 +16,8 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
       <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col hidden md:flex shrink-0">
-        <div className="p-6 border-b border-border flex items-center justify-center">
-          <BrandLogo size="md" />
+        <div className="px-6 py-5 border-b border-border flex items-center justify-center">
+          <BrandLogo size="md" className="max-w-[160px]" />
         </div>
         <nav className="p-4 space-y-1 flex-1">
           <Link
