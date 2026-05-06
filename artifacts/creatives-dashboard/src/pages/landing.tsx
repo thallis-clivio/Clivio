@@ -36,8 +36,26 @@ export default function Landing() {
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Monitore ROAS, CPA e comissões de afiliado em um único painel. O motor de decisão classifica automaticamente cada criativo em 5 estados: Escalar, Lucrativo, Atenção, Monitorar ou Pausar.
+            Monitore ROAS, CPA e comissões de afiliado em um único painel. O motor de decisão classifica automaticamente cada criativo em 5 estados de ação.
           </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-500 border border-green-500/30">
+              ESCALAR
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+              LUCRATIVO
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              ATENÇÃO
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+              MONITORAR
+            </span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-500 border border-red-500/30">
+              PAUSAR
+            </span>
+          </div>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
             <Link
@@ -62,8 +80,15 @@ export default function Landing() {
             </div>
             <h3 className="font-semibold text-sm">Motor de decisão</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              5 estados — ESCALAR, LUCRATIVO, ATENÇÃO, MONITORAR ou PAUSAR — decisão automática baseada em ROAS e dias sem vendas.
+              Decisão automática baseada em ROAS e dias sem vendas — cada criativo recebe um estado em tempo real.
             </p>
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-500/20 text-green-500">ESCALAR</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-blue-400">LUCRATIVO</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-400">ATENÇÃO</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-orange-500/20 text-orange-400">MONITORAR</span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-red-500/20 text-red-500">PAUSAR</span>
+            </div>
           </div>
 
           <div className="bg-card border border-border rounded-xl p-6 text-left space-y-3">
