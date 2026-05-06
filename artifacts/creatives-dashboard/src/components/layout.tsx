@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, LogOut } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { useClerk, useUser } from "@clerk/react";
 
 export function Layout({ children }: { children: ReactNode }) {
@@ -31,6 +31,17 @@ export function Layout({ children }: { children: ReactNode }) {
             <LayoutDashboard className="h-4 w-4" />
             Painel
           </Link>
+          <Link
+            href="/settings"
+            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+              location === "/settings"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Configurações
+          </Link>
         </nav>
         <div className="p-4 border-t border-border space-y-3">
           {user && (
@@ -56,6 +67,7 @@ export function Layout({ children }: { children: ReactNode }) {
         <h1 className="text-lg font-bold tracking-tight text-primary">Clivio</h1>
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="text-sm font-medium text-muted-foreground">Painel</Link>
+          <Link href="/settings" className="text-sm font-medium text-muted-foreground">Config.</Link>
           <button
             onClick={handleSignOut}
             className="text-muted-foreground hover:text-foreground transition-colors"

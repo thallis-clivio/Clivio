@@ -10,6 +10,7 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import CreativeDetail from "@/pages/creative-detail";
+import Settings from "@/pages/settings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -170,12 +171,26 @@ function CreativeDetailRoute() {
   );
 }
 
+function SettingsRoute() {
+  return (
+    <>
+      <Show when="signed-in">
+        <Settings />
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/" />
+      </Show>
+    </>
+  );
+}
+
 function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
       <Route path="/dashboard" component={DashboardRoute} />
       <Route path="/creatives/:id" component={CreativeDetailRoute} />
+      <Route path="/settings" component={SettingsRoute} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />
