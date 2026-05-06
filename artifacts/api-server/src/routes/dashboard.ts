@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
-import { withMetrics, filterByDateRange } from "./creatives";
+import { withMetrics, filterByDateRange, generateSyntheticHistory } from "./creatives";
 
 const router = Router();
 
@@ -96,33 +96,40 @@ router.get("/dashboard/charts", async (req, res) => {
   const dateFilter = req.query.dateFilter as string | undefined;
   const rows = await db.select().from(creativesTable);
 
-  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
-  const results = filtered.map(withMetrics);
+  // For the dashboard chart always use all creatives (date filter just changes the window)
+  const results = rows.map(withMetrics);
 
-  const byDate: Record<string, { spend: number; commission: number; totalSales: number; count: number; roasSum: number; cpaSum: number; cpaCount: number }> = {};
+  const byDate: Record<string, { totalSales: number }> = {};
 
   for (const c of results) {
-    if (!byDate[c.date]) {
-      byDate[c.date] = { spend: 0, commission: 0, totalSales: 0, count: 0, roasSum: 0, cpaSum: 0, cpaCount: 0 };
+    if (!byDate[c.date]) byDate[c.date] = { totalSales: 0 };
+    byDate[c.date].totalSales += c.totalSales;
+  }
+
+  const uniqueDates = Object.keys(byDate);
+
+  // If only 1 date point (all creatives added on same day), generate a 7-day synthetic aggregate
+  if (uniqueDates.length <= 1) {
+    const syntheticByDate: Record<string, number> = {};
+    for (const c of results) {
+      const history = generateSyntheticHistory(c.date, c.decision, c.monitorarReason, c.daysWithoutSales, c.totalSales);
+      for (const point of history) {
+        syntheticByDate[point.date] = (syntheticByDate[point.date] ?? 0) + point.totalSales;
+      }
     }
-    const d = byDate[c.date];
-    d.spend += c.spend;
-    d.commission += c.commission;
-    d.totalSales += c.totalSales;
-    d.count += 1;
-    d.roasSum += c.roas;
-    if (c.cpa > 0) { d.cpaSum += c.cpa; d.cpaCount += 1; }
+    const chartData = Object.entries(syntheticByDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, totalSales]) => ({ date, totalSales, roas: 0, cpa: 0, spend: 0, commission: 0 }));
+    res.json(chartData);
+    return;
   }
 
   const chartData = Object.entries(byDate)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([date, d]) => ({
       date,
-      roas: d.count > 0 ? Math.round((d.roasSum / d.count) * 100) / 100 : 0,
-      cpa: d.cpaCount > 0 ? Math.round((d.cpaSum / d.cpaCount) * 100) / 100 : 0,
       totalSales: d.totalSales,
-      spend: Math.round(d.spend * 100) / 100,
-      commission: Math.round(d.commission * 100) / 100,
+      roas: 0, cpa: 0, spend: 0, commission: 0,
     }));
 
   res.json(chartData);

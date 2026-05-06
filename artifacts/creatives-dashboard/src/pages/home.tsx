@@ -27,7 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type DateFilter = "all" | "daily" | "weekly" | "monthly";
+type DateFilter = "weekly" | "daily" | "monthly" | "all";
 
 function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
@@ -73,10 +73,10 @@ function getCpaColor(cpa: number, totalSales: number) {
 }
 
 const DATE_FILTER_LABELS: Record<DateFilter, string> = {
-  all: "Tudo",
   daily: "Hoje",
-  weekly: "Semana",
-  monthly: "Mês",
+  weekly: "Últimos 7 dias",
+  monthly: "Últimos 15 dias",
+  all: "Últimos 30 dias",
 };
 
 const SORTABLE_COLS: { key: ListCreativesSortBy; label: string }[] = [
@@ -221,7 +221,7 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
 }
 
 export default function Home() {
-  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("weekly");
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
@@ -274,7 +274,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-md border border-border overflow-hidden">
-              {(["all", "daily", "weekly", "monthly"] as DateFilter[]).map(f => (
+              {(["daily", "weekly", "monthly", "all"] as DateFilter[]).map(f => (
                 <button
                   key={f}
                   onClick={() => setDateFilter(f)}

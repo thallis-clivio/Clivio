@@ -95,9 +95,11 @@ function computePredictability(
 function filterByDateRange(date: string, dateFilter?: string): boolean {
   if (!dateFilter || dateFilter === "all") return true;
   const now = new Date();
+  now.setHours(23, 59, 59, 999);
   const d = new Date(date + "T00:00:00");
   if (dateFilter === "daily") {
-    return d.toDateString() === now.toDateString();
+    const today = new Date();
+    return d.toDateString() === today.toDateString();
   }
   if (dateFilter === "weekly") {
     const cutoff = new Date(now);
@@ -105,7 +107,9 @@ function filterByDateRange(date: string, dateFilter?: string): boolean {
     return d >= cutoff;
   }
   if (dateFilter === "monthly") {
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    const cutoff = new Date(now);
+    cutoff.setDate(cutoff.getDate() - 15);
+    return d >= cutoff;
   }
   return true;
 }
@@ -427,5 +431,5 @@ router.post("/creatives/:id/analyze", async (req, res) => {
   });
 });
 
-export { withMetrics, filterByDateRange, computeCommission, computeTotalSales };
+export { withMetrics, filterByDateRange, computeCommission, computeTotalSales, generateSyntheticHistory };
 export default router;
