@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Link, useSearch } from "wouter";
+import { useState, useMemo, useEffect } from "react";
+import { Link, useSearch, useLocation } from "wouter";
 import { useUser, useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -157,6 +157,12 @@ export default function Criativos() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
 
+  const [, navigate] = useLocation();
+
+  useEffect(() => {
+    setDecisionFilter(initialDecision);
+  }, [initialDecision]);
+
   const { user } = useUser();
   const { getToken } = useAuth();
   const userId = user?.id ?? "";
@@ -247,7 +253,18 @@ export default function Criativos() {
               {creatives ? `${creatives.length} criativos` : "Criativos"}
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Select value={decisionFilter} onValueChange={v => setDecisionFilter(v as CreativeWithMetricsDecision | "ALL")}>
+              <Select
+                value={decisionFilter}
+                onValueChange={v => {
+                  const val = v as CreativeWithMetricsDecision | "ALL";
+                  setDecisionFilter(val);
+                  if (val === "ALL") {
+                    navigate("/criativos");
+                  } else {
+                    navigate(`/criativos?decision=${val}`);
+                  }
+                }}
+              >
                 <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Decisão" />
                 </SelectTrigger>
