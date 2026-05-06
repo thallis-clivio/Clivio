@@ -1,0 +1,148 @@
+Update the existing dashboard with new performance metrics, filters, and predictive analysis.
+
+---
+
+🧠 DATA STRUCTURE UPDATE:
+
+Modify the creatives model:
+
+REMOVE:
+
+* hook_rate
+
+ADD:
+
+* total_sales (auto-calculated from all plans)
+
+---
+
+📊 NEW METRICS:
+
+1. CPA (Cost per Acquisition):
+   CPA = spend / total_sales
+
+2. ROAS (already exists, ensure correct calculation)
+
+3. total_sales:
+   Sum of all sales fields (5m, 7m, 9m, 12m, 16m, 20m)
+
+---
+
+🧠 DECISION ENGINE UPDATE:
+
+Keep existing ROAS logic:
+
+* ROAS >= 2 → ESCALAR
+* ROAS 1.5–1.99 → MONITORAR
+* ROAS 1–1.49 → OTIMIZAR
+* ROAS < 1 → PAUSAR
+
+Override:
+
+* If days_without_sales >= 2 → PAUSAR
+
+---
+
+🔮 PREDICTABILITY SYSTEM (NEW FEATURE):
+
+Create a new field: "predictability_score"
+
+Logic:
+
+Score from 0 to 100 based on:
+
+* Consistency of sales (more days with sales = higher score)
+* Stable ROAS (low variation = higher score)
+* CPA efficiency (lower CPA = higher score)
+
+Classification:
+
+* Score > 80 → "ALTA PREVISIBILIDADE"
+* Score 50–80 → "MÉDIA PREVISIBILIDADE"
+* Score < 50 → "BAIXA PREVISIBILIDADE"
+
+Also create:
+
+* "predictability_label"
+
+---
+
+📅 DATE FILTER SYSTEM:
+
+Add filters:
+
+* Daily (today only)
+* Weekly (last 7 days)
+* Monthly (current month)
+* All time (default)
+
+Users must be able to switch between these views easily.
+
+---
+
+📊 DASHBOARD UPDATE:
+
+1. TABLE COLUMNS:
+
+* Name
+* Spend
+* Commission
+* ROAS
+* CPA
+* Total Sales
+* Decision
+* Predictability
+
+---
+
+2. TOP CARDS:
+
+* Total Spend
+* Total Commission
+* Average ROAS
+* Average CPA
+* Total Sales
+
+---
+
+📈 CHARTS:
+
+* ROAS over time
+* CPA over time
+* Sales per day
+
+---
+
+🎨 UI IMPROVEMENTS:
+
+* Highlight:
+
+  * Low CPA (green)
+  * High CPA (red)
+* Add badges:
+
+  * "Alta previsibilidade"
+  * "Criativo instável"
+
+---
+
+🤖 AI ANALYSIS UPDATE:
+
+When analyzing a creative, include:
+
+* ROAS evaluation
+* CPA evaluation
+* Predictability insight:
+  (example: "Este criativo tem alta previsibilidade e pode ser escalado com segurança")
+
+---
+
+🎯 GOAL:
+
+Transform the dashboard into a predictive decision-making system, not just a reporting tool.
+
+Focus on:
+
+* performance clarity
+* scalability decisions
+* pattern recognition

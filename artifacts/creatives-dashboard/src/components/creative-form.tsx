@@ -4,18 +4,21 @@ import * as z from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useCreateCreative, useUpdateCreative, getListCreativesQueryKey, getGetCreativeQueryKey, getGetDashboardSummaryQueryKey, getGetDecisionBreakdownQueryKey } from "@workspace/api-client-react";
+import {
+  useCreateCreative, useUpdateCreative,
+  getListCreativesQueryKey, getGetCreativeQueryKey,
+  getGetDashboardSummaryQueryKey, getGetDecisionBreakdownQueryKey, getGetDashboardChartsQueryKey,
+  CreativeWithMetrics,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
-import { CreativeWithMetrics } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   date: z.string().min(1, "Data é obrigatória"),
   spend: z.coerce.number().min(0, "Deve ser >= 0"),
   ctr: z.coerce.number().min(0, "Deve ser >= 0"),
-  hookRate: z.coerce.number().min(0, "Deve ser >= 0"),
   daysWithoutSales: z.coerce.number().min(0, "Deve ser >= 0"),
   sales5m: z.coerce.number().min(0, "Deve ser >= 0"),
   sales7m: z.coerce.number().min(0, "Deve ser >= 0"),
@@ -43,7 +46,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
       date: new Date().toISOString().split("T")[0],
       spend: 0,
       ctr: 0,
-      hookRate: 0,
       daysWithoutSales: 0,
       sales5m: 0,
       sales7m: 0,
@@ -61,7 +63,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         date: initialData.date,
         spend: initialData.spend,
         ctr: initialData.ctr,
-        hookRate: initialData.hookRate,
         daysWithoutSales: initialData.daysWithoutSales,
         sales5m: initialData.sales5m,
         sales7m: initialData.sales7m,
@@ -75,8 +76,14 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
 
   const createCreative = useCreateCreative();
   const updateCreative = useUpdateCreative();
-
   const isPending = createCreative.isPending || updateCreative.isPending;
+
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
+  }
 
   function onSubmit(values: FormValues) {
     if (initialData) {
@@ -85,15 +92,11 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         {
           onSuccess: () => {
             toast({ title: "Criativo atualizado com sucesso" });
-            queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetCreativeQueryKey(initialData.id) });
-            queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
+            invalidateAll();
             onSuccess?.();
           },
-          onError: () => {
-            toast({ title: "Erro ao atualizar criativo", variant: "destructive" });
-          },
+          onError: () => toast({ title: "Erro ao atualizar criativo", variant: "destructive" }),
         }
       );
     } else {
@@ -102,14 +105,10 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         {
           onSuccess: () => {
             toast({ title: "Criativo criado com sucesso" });
-            queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
+            invalidateAll();
             onSuccess?.();
           },
-          onError: () => {
-            toast({ title: "Erro ao criar criativo", variant: "destructive" });
-          },
+          onError: () => toast({ title: "Erro ao criar criativo", variant: "destructive" }),
         }
       );
     }
@@ -119,167 +118,55 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nome do Criativo</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nome do criativo" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Data</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="spend"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Gasto (R$)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="daysWithoutSales"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dias sem Venda</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="ctr"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>CTR (%)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="hookRate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Taxa de Hook (%)</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <FormField control={form.control} name="name" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome do Criativo</FormLabel>
+              <FormControl><Input placeholder="Nome do criativo" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="date" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Data</FormLabel>
+              <FormControl><Input type="date" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="spend" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Gasto (R$)</FormLabel>
+              <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="daysWithoutSales" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Dias sem Venda</FormLabel>
+              <FormControl><Input type="number" min="0" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
+          <FormField control={form.control} name="ctr" render={({ field }) => (
+            <FormItem>
+              <FormLabel>CTR (%)</FormLabel>
+              <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
         </div>
 
         <div className="border-t border-border pt-4">
-          <h3 className="text-sm font-medium mb-4 text-muted-foreground uppercase">Vendas por Plano</h3>
+          <h3 className="text-sm font-medium mb-4 text-muted-foreground uppercase tracking-widest">Vendas por Plano</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="sales5m"
-              render={({ field }) => (
+            {(["5m","7m","9m","12m","16m","20m"] as const).map(plan => (
+              <FormField key={plan} control={form.control} name={`sales${plan}` as any} render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Vendas 5m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
+                  <FormLabel>Vendas {plan}</FormLabel>
+                  <FormControl><Input type="number" min="0" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sales7m"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vendas 7m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sales9m"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vendas 9m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sales12m"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vendas 12m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sales16m"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vendas 16m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="sales20m"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Vendas 20m</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              )} />
+            ))}
           </div>
         </div>
 

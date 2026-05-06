@@ -46,13 +46,19 @@ paths:
           required: false
           schema:
             type: string
-            enum: [roas, spend, commission, name]
+            enum: [roas, spend, commission, name, cpa, totalSales]
         - name: sortOrder
           in: query
           required: false
           schema:
             type: string
             enum: [asc, desc]
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
       responses:
         "200":
           description: List of creatives with computed metrics
@@ -189,6 +195,13 @@ paths:
       operationId: getDashboardSummary
       tags: [dashboard]
       summary: Get dashboard KPI summary
+      parameters:
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
       responses:
         "200":
           description: Dashboard summary
@@ -202,6 +215,13 @@ paths:
       operationId: getDecisionBreakdown
       tags: [dashboard]
       summary: Count of creatives per decision
+      parameters:
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
       responses:
         "200":
           description: Decision breakdown counts
@@ -209,6 +229,28 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/DecisionBreakdown"
+
+  /dashboard/charts:
+    get:
+      operationId: getDashboardCharts
+      tags: [dashboard]
+      summary: Get chart data aggregated by date
+      parameters:
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
+      responses:
+        "200":
+          description: Chart data points by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChartDataPoint"
 
 components:
   schemas:
@@ -251,8 +293,6 @@ components:
           type: integer
         ctr:
           type: number
-        hookRate:
-          type: number
         daysWithoutSales:
           type: integer
       required:
@@ -266,7 +306,6 @@ components:
         - sales16m
         - sales20m
         - ctr
-        - hookRate
         - daysWithoutSales
 
     CreativeWithMetrics:
@@ -280,6 +319,15 @@ components:
               type: number
             roas:
               type: number
+            cpa:
+              type: number
+            totalSales:
+              type: integer
+            predictabilityScore:
+              type: number
+            predictabilityLabel:
+              type: string
+              enum: [ALTA PREVISIBILIDADE, MÉDIA PREVISIBILIDADE, BAIXA PREVISIBILIDADE]
             decision:
               type: string
               enum: [ESCALAR, MONITORAR, OTIMIZAR, PAUSAR]
@@ -287,6 +335,10 @@ components:
             - id
             - commission
             - roas
+            - cpa
+            - totalSales
+            - predictabilityScore
+            - predictabilityLabel
             - decision
 
     DashboardSummary:
@@ -298,6 +350,10 @@ components:
           type: number
         averageRoas:
           type: number
+        averageCpa:
+          type: number
+        totalSales:
+          type: integer
         totalCreatives:
           type: integer
         topCreativeByRoas:
@@ -306,6 +362,8 @@ components:
         - totalSpend
         - totalCommission
         - averageRoas
+        - averageCpa
+        - totalSales
         - totalCreatives
 
     DecisionBreakdown:
@@ -324,6 +382,29 @@ components:
         - MONITORAR
         - OTIMIZAR
         - PAUSAR
+
+    ChartDataPoint:
+      type: object
+      properties:
+        date:
+          type: string
+        roas:
+          type: number
+        cpa:
+          type: number
+        totalSales:
+          type: integer
+        spend:
+          type: number
+        commission:
+          type: number
+      required:
+        - date
+        - roas
+        - cpa
+        - totalSales
+        - spend
+        - commission
 
     AnalysisResult:
       type: object
@@ -345,10 +426,16 @@ components:
               type: number
             spend:
               type: number
+            cpa:
+              type: number
             ctr:
               type: number
-            hookRate:
+            totalSales:
+              type: integer
+            predictabilityScore:
               type: number
+            predictabilityLabel:
+              type: string
       required:
         - creativeId
         - decision

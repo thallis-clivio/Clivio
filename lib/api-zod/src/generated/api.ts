@@ -20,8 +20,11 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListCreativesQueryParams = zod.object({
   decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]).optional(),
-  sortBy: zod.enum(["roas", "spend", "commission", "name"]).optional(),
+  sortBy: zod
+    .enum(["roas", "spend", "commission", "name", "cpa", "totalSales"])
+    .optional(),
   sortOrder: zod.enum(["asc", "desc"]).optional(),
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
 });
 
 export const ListCreativesResponseItem = zod
@@ -36,7 +39,6 @@ export const ListCreativesResponseItem = zod
     sales16m: zod.number(),
     sales20m: zod.number(),
     ctr: zod.number(),
-    hookRate: zod.number(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -44,6 +46,14 @@ export const ListCreativesResponseItem = zod
       id: zod.number(),
       commission: zod.number(),
       roas: zod.number(),
+      cpa: zod.number(),
+      totalSales: zod.number(),
+      predictabilityScore: zod.number(),
+      predictabilityLabel: zod.enum([
+        "ALTA PREVISIBILIDADE",
+        "MÉDIA PREVISIBILIDADE",
+        "BAIXA PREVISIBILIDADE",
+      ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
     }),
   );
@@ -63,7 +73,6 @@ export const CreateCreativeBody = zod.object({
   sales16m: zod.number(),
   sales20m: zod.number(),
   ctr: zod.number(),
-  hookRate: zod.number(),
   daysWithoutSales: zod.number(),
 });
 
@@ -86,7 +95,6 @@ export const GetCreativeResponse = zod
     sales16m: zod.number(),
     sales20m: zod.number(),
     ctr: zod.number(),
-    hookRate: zod.number(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -94,6 +102,14 @@ export const GetCreativeResponse = zod
       id: zod.number(),
       commission: zod.number(),
       roas: zod.number(),
+      cpa: zod.number(),
+      totalSales: zod.number(),
+      predictabilityScore: zod.number(),
+      predictabilityLabel: zod.enum([
+        "ALTA PREVISIBILIDADE",
+        "MÉDIA PREVISIBILIDADE",
+        "BAIXA PREVISIBILIDADE",
+      ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
     }),
   );
@@ -116,7 +132,6 @@ export const UpdateCreativeBody = zod.object({
   sales16m: zod.number(),
   sales20m: zod.number(),
   ctr: zod.number(),
-  hookRate: zod.number(),
   daysWithoutSales: zod.number(),
 });
 
@@ -132,7 +147,6 @@ export const UpdateCreativeResponse = zod
     sales16m: zod.number(),
     sales20m: zod.number(),
     ctr: zod.number(),
-    hookRate: zod.number(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -140,6 +154,14 @@ export const UpdateCreativeResponse = zod
       id: zod.number(),
       commission: zod.number(),
       roas: zod.number(),
+      cpa: zod.number(),
+      totalSales: zod.number(),
+      predictabilityScore: zod.number(),
+      predictabilityLabel: zod.enum([
+        "ALTA PREVISIBILIDADE",
+        "MÉDIA PREVISIBILIDADE",
+        "BAIXA PREVISIBILIDADE",
+      ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
     }),
   );
@@ -167,18 +189,27 @@ export const AnalyzeCreativeResponse = zod.object({
     roas: zod.number().optional(),
     commission: zod.number().optional(),
     spend: zod.number().optional(),
+    cpa: zod.number().optional(),
     ctr: zod.number().optional(),
-    hookRate: zod.number().optional(),
+    totalSales: zod.number().optional(),
+    predictabilityScore: zod.number().optional(),
+    predictabilityLabel: zod.string().optional(),
   }),
 });
 
 /**
  * @summary Get dashboard KPI summary
  */
+export const GetDashboardSummaryQueryParams = zod.object({
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+});
+
 export const GetDashboardSummaryResponse = zod.object({
   totalSpend: zod.number(),
   totalCommission: zod.number(),
   averageRoas: zod.number(),
+  averageCpa: zod.number(),
+  totalSales: zod.number(),
   totalCreatives: zod.number(),
   topCreativeByRoas: zod
     .object({
@@ -192,7 +223,6 @@ export const GetDashboardSummaryResponse = zod.object({
       sales16m: zod.number(),
       sales20m: zod.number(),
       ctr: zod.number(),
-      hookRate: zod.number(),
       daysWithoutSales: zod.number(),
     })
     .and(
@@ -200,6 +230,14 @@ export const GetDashboardSummaryResponse = zod.object({
         id: zod.number(),
         commission: zod.number(),
         roas: zod.number(),
+        cpa: zod.number(),
+        totalSales: zod.number(),
+        predictabilityScore: zod.number(),
+        predictabilityLabel: zod.enum([
+          "ALTA PREVISIBILIDADE",
+          "MÉDIA PREVISIBILIDADE",
+          "BAIXA PREVISIBILIDADE",
+        ]),
         decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
       }),
     )
@@ -209,9 +247,32 @@ export const GetDashboardSummaryResponse = zod.object({
 /**
  * @summary Count of creatives per decision
  */
+export const GetDecisionBreakdownQueryParams = zod.object({
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+});
+
 export const GetDecisionBreakdownResponse = zod.object({
   ESCALAR: zod.number(),
   MONITORAR: zod.number(),
   OTIMIZAR: zod.number(),
   PAUSAR: zod.number(),
 });
+
+/**
+ * @summary Get chart data aggregated by date
+ */
+export const GetDashboardChartsQueryParams = zod.object({
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+});
+
+export const GetDashboardChartsResponseItem = zod.object({
+  date: zod.string(),
+  roas: zod.number(),
+  cpa: zod.number(),
+  totalSales: zod.number(),
+  spend: zod.number(),
+  commission: zod.number(),
+});
+export const GetDashboardChartsResponse = zod.array(
+  GetDashboardChartsResponseItem,
+);

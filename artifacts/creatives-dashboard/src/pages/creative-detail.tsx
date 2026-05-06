@@ -1,18 +1,15 @@
 import { useParams, Link, useLocation } from "wouter";
 import {
-  useGetCreative,
-  getGetCreativeQueryKey,
-  useDeleteCreative,
-  useAnalyzeCreative,
-  getListCreativesQueryKey,
-  getGetDashboardSummaryQueryKey,
-  getGetDecisionBreakdownQueryKey
+  useGetCreative, getGetCreativeQueryKey,
+  useDeleteCreative, useAnalyzeCreative,
+  getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
+  getGetDecisionBreakdownQueryKey, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart, Target, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart, AlertTriangle, Gauge } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -32,6 +29,19 @@ function getDecisionColor(decision: string) {
   }
 }
 
+function getPredictabilityColor(label: string) {
+  if (label === "ALTA PREVISIBILIDADE") return "bg-green-500/20 text-green-400 border-green-500/30";
+  if (label === "MÉDIA PREVISIBILIDADE") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+  return "bg-red-500/20 text-red-400 border-red-500/30";
+}
+
+function getCpaColor(cpa: number, totalSales: number) {
+  if (totalSales === 0) return "text-muted-foreground";
+  if (cpa < 150) return "text-green-400";
+  if (cpa < 300) return "text-yellow-400";
+  return "text-red-400";
+}
+
 export default function CreativeDetail() {
   const { id } = useParams<{ id: string }>();
   const creativeId = parseInt(id || "0", 10);
@@ -47,34 +57,31 @@ export default function CreativeDetail() {
   const deleteCreative = useDeleteCreative();
   const analyzeCreative = useAnalyzeCreative();
 
+  function invalidateAll() {
+    queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
+  }
+
   const handleDelete = () => {
     if (confirm("Tem certeza que deseja excluir este criativo?")) {
-      deleteCreative.mutate(
-        { id: creativeId },
-        {
-          onSuccess: () => {
-            toast({ title: "Criativo excluído" });
-            queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-            queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
-            setLocation("/");
-          },
-          onError: () => toast({ title: "Erro ao excluir", variant: "destructive" })
-        }
-      );
+      deleteCreative.mutate({ id: creativeId }, {
+        onSuccess: () => {
+          toast({ title: "Criativo excluído" });
+          invalidateAll();
+          setLocation("/");
+        },
+        onError: () => toast({ title: "Erro ao excluir", variant: "destructive" })
+      });
     }
   };
 
   const handleAnalyze = () => {
-    analyzeCreative.mutate(
-      { id: creativeId },
-      {
-        onSuccess: () => {
-          toast({ title: "Análise concluída" });
-        },
-        onError: () => toast({ title: "Falha na análise", variant: "destructive" })
-      }
-    );
+    analyzeCreative.mutate({ id: creativeId }, {
+      onSuccess: () => toast({ title: "Análise concluída" }),
+      onError: () => toast({ title: "Falha na análise", variant: "destructive" })
+    });
   };
 
   if (isLoading) {
@@ -96,9 +103,7 @@ export default function CreativeDetail() {
       <Layout>
         <div className="p-6 flex flex-col items-center justify-center min-h-[50vh]">
           <h2 className="text-2xl font-bold mb-4">Criativo não encontrado</h2>
-          <Link href="/">
-            <Button>Voltar ao Painel</Button>
-          </Link>
+          <Link href="/"><Button>Voltar ao Painel</Button></Link>
         </div>
       </Layout>
     );
@@ -107,6 +112,7 @@ export default function CreativeDetail() {
   return (
     <Layout>
       <div className="flex-1 p-6 space-y-6">
+
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex items-center gap-4">
@@ -117,52 +123,43 @@ export default function CreativeDetail() {
             </Link>
             <div>
               <h2 className="text-3xl font-bold tracking-tight font-mono" data-testid="text-creative-name">{creative.name}</h2>
-              <div className="flex items-center gap-3 mt-1">
+              <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
-                <Badge variant="outline" className={`font-mono border ${getDecisionColor(creative.decision)}`} data-testid="badge-decision">
+                <Badge variant="outline" className={`font-mono border text-xs ${getDecisionColor(creative.decision)}`} data-testid="badge-decision">
                   {creative.decision}
+                </Badge>
+                <Badge variant="outline" className={`border text-xs ${getPredictabilityColor(creative.predictabilityLabel)}`} data-testid="badge-predictability">
+                  {creative.predictabilityLabel}
                 </Badge>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={handleAnalyze}
-              disabled={analyzeCreative.isPending}
-              data-testid="button-analyze"
-            >
-              <BrainCircuit className={`w-4 h-4 ${analyzeCreative.isPending ? 'animate-pulse text-primary' : ''}`} />
-              {analyzeCreative.isPending ? 'Analisando...' : 'Analisar Criativo'}
+            <Button variant="outline" className="gap-2" onClick={handleAnalyze} disabled={analyzeCreative.isPending} data-testid="button-analyze">
+              <BrainCircuit className={`w-4 h-4 ${analyzeCreative.isPending ? "animate-pulse text-primary" : ""}`} />
+              {analyzeCreative.isPending ? "Analisando..." : "Analisar Criativo"}
             </Button>
-
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" size="icon" data-testid="button-edit">
-                  <Edit className="w-4 h-4" />
-                </Button>
+                <Button variant="outline" size="icon" data-testid="button-edit"><Edit className="w-4 h-4" /></Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[600px] border-border">
-                <DialogHeader>
-                  <DialogTitle>Editar Criativo</DialogTitle>
-                </DialogHeader>
-                <CreativeForm initialData={creative} onSuccess={() => setIsEditOpen(false)} />
+                <DialogHeader><DialogTitle>Editar Criativo</DialogTitle></DialogHeader>
+                <CreativeForm initialData={creative} onSuccess={() => { setIsEditOpen(false); queryClient.invalidateQueries({ queryKey: getGetCreativeQueryKey(creativeId) }); invalidateAll(); }} />
               </DialogContent>
             </Dialog>
-
             <Button variant="destructive" size="icon" onClick={handleDelete} disabled={deleteCreative.isPending} data-testid="button-delete">
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
         </div>
 
-        {/* AI Analysis Result */}
+        {/* AI Analysis */}
         {analyzeCreative.data && (
-          <Alert className="border-primary bg-primary/5 text-primary" data-testid="alert-analysis">
+          <Alert className="border-primary bg-primary/5" data-testid="alert-analysis">
             <BrainCircuit className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-bold tracking-widest uppercase">Relatório de Inteligência</AlertTitle>
+            <AlertTitle className="font-bold tracking-widest uppercase text-primary">Relatório de Inteligência</AlertTitle>
             <AlertDescription className="mt-2 space-y-4">
               <div className="text-foreground">{analyzeCreative.data.explanation}</div>
               <div className="bg-background/50 p-3 rounded-md border border-border">
@@ -174,42 +171,74 @@ export default function CreativeDetail() {
         )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Main KPI Column */}
-          <div className="space-y-6">
-            <Card className="border-border/50 bg-card/50 shadow-md">
+          {/* KPI Column */}
+          <div className="space-y-4">
+            <Card className="border-border/50 bg-card/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest">Desempenho</CardTitle>
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Desempenho</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-5">
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">ROAS</div>
+                  <div className="text-xs text-muted-foreground mb-0.5">ROAS</div>
                   <div className="text-4xl font-bold font-mono text-primary" data-testid="text-roas">{formatRoas(creative.roas)}</div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Gasto</div>
-                    <div className="text-xl font-bold font-mono text-foreground" data-testid="text-spend">{formatCurrency(creative.spend)}</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Gasto</div>
+                    <div className="text-lg font-bold font-mono" data-testid="text-spend">{formatCurrency(creative.spend)}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Comissão</div>
-                    <div className="text-xl font-bold font-mono text-foreground" data-testid="text-commission">{formatCurrency(creative.commission)}</div>
-                  </div>
-                </div>
-                <div className="h-px bg-border w-full" />
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">CTR</div>
-                    <div className="text-lg font-mono text-foreground">{creative.ctr}%</div>
-                  </div>
-                  <div>
-                    <div className="text-sm text-muted-foreground mb-1">Taxa de Hook</div>
-                    <div className="text-lg font-mono text-foreground">{creative.hookRate}%</div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Comissão</div>
+                    <div className="text-lg font-bold font-mono" data-testid="text-commission">{formatCurrency(creative.commission)}</div>
                   </div>
                 </div>
-                <div className="h-px bg-border w-full" />
+                <div className="h-px bg-border" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-0.5">Total Vendas</div>
+                    <div className="text-lg font-bold font-mono">{creative.totalSales}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground mb-0.5">CPA</div>
+                    <div className={`text-lg font-bold font-mono ${getCpaColor(creative.cpa, creative.totalSales)}`} data-testid="text-cpa">
+                      {creative.totalSales === 0 ? "—" : formatCurrency(creative.cpa)}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-px bg-border" />
                 <div>
-                  <div className="text-sm text-muted-foreground mb-1">Dias sem Venda</div>
-                  <div className="text-lg font-mono text-foreground">{creative.daysWithoutSales}</div>
+                  <div className="text-xs text-muted-foreground mb-0.5">CTR</div>
+                  <div className="text-base font-mono">{creative.ctr}%</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground mb-0.5">Dias sem Venda</div>
+                  <div className={`text-base font-mono font-semibold ${creative.daysWithoutSales >= 2 ? "text-red-400" : creative.daysWithoutSales === 1 ? "text-yellow-400" : "text-green-400"}`}>
+                    {creative.daysWithoutSales}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Predictability Card */}
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+                  <Gauge className="w-3.5 h-3.5" />
+                  Previsibilidade
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-sm font-semibold ${getPredictabilityColor(creative.predictabilityLabel).includes("green") ? "text-green-400" : getPredictabilityColor(creative.predictabilityLabel).includes("yellow") ? "text-yellow-400" : "text-red-400"}`}>
+                    {creative.predictabilityLabel}
+                  </span>
+                  <span className="text-2xl font-bold font-mono">{creative.predictabilityScore}<span className="text-sm text-muted-foreground">/100</span></span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all ${creative.predictabilityScore > 80 ? "bg-green-500" : creative.predictabilityScore >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                    style={{ width: `${creative.predictabilityScore}%` }}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -226,56 +255,45 @@ export default function CreativeDetail() {
           </div>
 
           {/* Sales Breakdown */}
-          <Card className="md:col-span-2 border-border/50 bg-card/50 shadow-md">
+          <Card className="md:col-span-2 border-border/50 bg-card/50">
             <CardHeader className="pb-4 border-b border-border">
-              <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                 <LineChart className="w-4 h-4" />
                 Vendas por Plano
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 5m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales5m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$217</div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {(
+                  [
+                    { label: "Plano 5m", value: creative.sales5m, rate: "R$217" },
+                    { label: "Plano 7m", value: creative.sales7m, rate: "R$300" },
+                    { label: "Plano 9m", value: creative.sales9m, rate: "R$380" },
+                    { label: "Plano 12m", value: creative.sales12m, rate: "R$460" },
+                    { label: "Plano 16m", value: creative.sales16m, rate: "R$520" },
+                    { label: "Plano 20m", value: creative.sales20m, rate: "R$650" },
+                  ]
+                ).map(plan => (
+                  <div key={plan.label} className="bg-background p-4 rounded-lg border border-border">
+                    <div className="text-xs text-muted-foreground mb-2">{plan.label}</div>
+                    <div className="flex items-end justify-between">
+                      <div className="text-3xl font-bold font-mono">{plan.value}</div>
+                      <div className="text-xs text-muted-foreground pb-1">@ {plan.rate}</div>
+                    </div>
                   </div>
+                ))}
+              </div>
+
+              <div className="mt-6 p-4 rounded-lg border border-border bg-background/50">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total de Vendas</span>
+                  <span className="text-xl font-bold font-mono">{creative.totalSales}</span>
                 </div>
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 7m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales7m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$300</div>
-                  </div>
-                </div>
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 9m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales9m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$380</div>
-                  </div>
-                </div>
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 12m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales12m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$460</div>
-                  </div>
-                </div>
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 16m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales16m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$520</div>
-                  </div>
-                </div>
-                <div className="bg-background p-4 rounded-lg border border-border">
-                  <div className="text-sm text-muted-foreground mb-2">Plano 20m</div>
-                  <div className="flex items-end justify-between">
-                    <div className="text-3xl font-bold font-mono">{creative.sales20m}</div>
-                    <div className="text-xs text-muted-foreground pb-1">@ R$650</div>
-                  </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm text-muted-foreground">CPA (Custo por Aquisição)</span>
+                  <span className={`text-xl font-bold font-mono ${getCpaColor(creative.cpa, creative.totalSales)}`}>
+                    {creative.totalSales === 0 ? "—" : formatCurrency(creative.cpa)}
+                  </span>
                 </div>
               </div>
             </CardContent>

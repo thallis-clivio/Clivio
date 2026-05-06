@@ -24,9 +24,17 @@ export interface CreateCreativeBody {
   sales16m: number;
   sales20m: number;
   ctr: number;
-  hookRate: number;
   daysWithoutSales: number;
 }
+
+export type CreativeWithMetricsPredictabilityLabel =
+  (typeof CreativeWithMetricsPredictabilityLabel)[keyof typeof CreativeWithMetricsPredictabilityLabel];
+
+export const CreativeWithMetricsPredictabilityLabel = {
+  ALTA_PREVISIBILIDADE: "ALTA PREVISIBILIDADE",
+  MÉDIA_PREVISIBILIDADE: "MÉDIA PREVISIBILIDADE",
+  BAIXA_PREVISIBILIDADE: "BAIXA PREVISIBILIDADE",
+} as const;
 
 export type CreativeWithMetricsDecision =
   (typeof CreativeWithMetricsDecision)[keyof typeof CreativeWithMetricsDecision];
@@ -42,6 +50,10 @@ export type CreativeWithMetrics = CreateCreativeBody & {
   id: number;
   commission: number;
   roas: number;
+  cpa: number;
+  totalSales: number;
+  predictabilityScore: number;
+  predictabilityLabel: CreativeWithMetricsPredictabilityLabel;
   decision: CreativeWithMetricsDecision;
 };
 
@@ -49,6 +61,8 @@ export interface DashboardSummary {
   totalSpend: number;
   totalCommission: number;
   averageRoas: number;
+  averageCpa: number;
+  totalSales: number;
   totalCreatives: number;
   topCreativeByRoas?: CreativeWithMetrics;
 }
@@ -60,12 +74,24 @@ export interface DecisionBreakdown {
   PAUSAR: number;
 }
 
+export interface ChartDataPoint {
+  date: string;
+  roas: number;
+  cpa: number;
+  totalSales: number;
+  spend: number;
+  commission: number;
+}
+
 export type AnalysisResultMetrics = {
   roas?: number;
   commission?: number;
   spend?: number;
+  cpa?: number;
   ctr?: number;
-  hookRate?: number;
+  totalSales?: number;
+  predictabilityScore?: number;
+  predictabilityLabel?: string;
 };
 
 export interface AnalysisResult {
@@ -80,6 +106,7 @@ export type ListCreativesParams = {
   decision?: ListCreativesDecision;
   sortBy?: ListCreativesSortBy;
   sortOrder?: ListCreativesSortOrder;
+  dateFilter?: ListCreativesDateFilter;
 };
 
 export type ListCreativesDecision =
@@ -100,6 +127,8 @@ export const ListCreativesSortBy = {
   spend: "spend",
   commission: "commission",
   name: "name",
+  cpa: "cpa",
+  totalSales: "totalSales",
 } as const;
 
 export type ListCreativesSortOrder =
@@ -108,4 +137,56 @@ export type ListCreativesSortOrder =
 export const ListCreativesSortOrder = {
   asc: "asc",
   desc: "desc",
+} as const;
+
+export type ListCreativesDateFilter =
+  (typeof ListCreativesDateFilter)[keyof typeof ListCreativesDateFilter];
+
+export const ListCreativesDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
+export type GetDashboardSummaryParams = {
+  dateFilter?: GetDashboardSummaryDateFilter;
+};
+
+export type GetDashboardSummaryDateFilter =
+  (typeof GetDashboardSummaryDateFilter)[keyof typeof GetDashboardSummaryDateFilter];
+
+export const GetDashboardSummaryDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
+export type GetDecisionBreakdownParams = {
+  dateFilter?: GetDecisionBreakdownDateFilter;
+};
+
+export type GetDecisionBreakdownDateFilter =
+  (typeof GetDecisionBreakdownDateFilter)[keyof typeof GetDecisionBreakdownDateFilter];
+
+export const GetDecisionBreakdownDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
+export type GetDashboardChartsParams = {
+  dateFilter?: GetDashboardChartsDateFilter;
+};
+
+export type GetDashboardChartsDateFilter =
+  (typeof GetDashboardChartsDateFilter)[keyof typeof GetDashboardChartsDateFilter];
+
+export const GetDashboardChartsDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
 } as const;

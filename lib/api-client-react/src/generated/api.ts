@@ -18,11 +18,15 @@ import type {
 
 import type {
   AnalysisResult,
+  ChartDataPoint,
   CreateCreativeBody,
   CreativeWithMetrics,
   DashboardSummary,
   DecisionBreakdown,
   ErrorResponse,
+  GetDashboardChartsParams,
+  GetDashboardSummaryParams,
+  GetDecisionBreakdownParams,
   HealthStatus,
   ListCreativesParams,
 } from "./api.schemas";
@@ -637,41 +641,63 @@ export const useAnalyzeCreative = <
 /**
  * @summary Get dashboard KPI summary
  */
-export const getGetDashboardSummaryUrl = () => {
-  return `/api/dashboard/summary`;
+export const getGetDashboardSummaryUrl = (
+  params?: GetDashboardSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/summary?${stringifiedParams}`
+    : `/api/dashboard/summary`;
 };
 
 export const getDashboardSummary = async (
+  params?: GetDashboardSummaryParams,
   options?: RequestInit,
 ): Promise<DashboardSummary> => {
-  return customFetch<DashboardSummary>(getGetDashboardSummaryUrl(), {
+  return customFetch<DashboardSummary>(getGetDashboardSummaryUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetDashboardSummaryQueryKey = () => {
-  return [`/api/dashboard/summary`] as const;
+export const getGetDashboardSummaryQueryKey = (
+  params?: GetDashboardSummaryParams,
+) => {
+  return [`/api/dashboard/summary`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetDashboardSummaryQueryOptions = <
   TData = Awaited<ReturnType<typeof getDashboardSummary>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardSummary>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: GetDashboardSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetDashboardSummaryQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardSummaryQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getDashboardSummary>>
-  > = ({ signal }) => getDashboardSummary({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    getDashboardSummary(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getDashboardSummary>>,
@@ -692,15 +718,18 @@ export type GetDashboardSummaryQueryError = ErrorType<unknown>;
 export function useGetDashboardSummary<
   TData = Awaited<ReturnType<typeof getDashboardSummary>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDashboardSummary>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetDashboardSummaryQueryOptions(options);
+>(
+  params?: GetDashboardSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardSummaryQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -712,41 +741,66 @@ export function useGetDashboardSummary<
 /**
  * @summary Count of creatives per decision
  */
-export const getGetDecisionBreakdownUrl = () => {
-  return `/api/dashboard/decision-breakdown`;
+export const getGetDecisionBreakdownUrl = (
+  params?: GetDecisionBreakdownParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/decision-breakdown?${stringifiedParams}`
+    : `/api/dashboard/decision-breakdown`;
 };
 
 export const getDecisionBreakdown = async (
+  params?: GetDecisionBreakdownParams,
   options?: RequestInit,
 ): Promise<DecisionBreakdown> => {
-  return customFetch<DecisionBreakdown>(getGetDecisionBreakdownUrl(), {
+  return customFetch<DecisionBreakdown>(getGetDecisionBreakdownUrl(params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetDecisionBreakdownQueryKey = () => {
-  return [`/api/dashboard/decision-breakdown`] as const;
+export const getGetDecisionBreakdownQueryKey = (
+  params?: GetDecisionBreakdownParams,
+) => {
+  return [
+    `/api/dashboard/decision-breakdown`,
+    ...(params ? [params] : []),
+  ] as const;
 };
 
 export const getGetDecisionBreakdownQueryOptions = <
   TData = Awaited<ReturnType<typeof getDecisionBreakdown>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDecisionBreakdown>>,
-    TError,
-    TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}) => {
+>(
+  params?: GetDecisionBreakdownParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDecisionBreakdown>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetDecisionBreakdownQueryKey();
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDecisionBreakdownQueryKey(params);
 
   const queryFn: QueryFunction<
     Awaited<ReturnType<typeof getDecisionBreakdown>>
-  > = ({ signal }) => getDecisionBreakdown({ signal, ...requestOptions });
+  > = ({ signal }) =>
+    getDecisionBreakdown(params, { signal, ...requestOptions });
 
   return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
     Awaited<ReturnType<typeof getDecisionBreakdown>>,
@@ -767,15 +821,115 @@ export type GetDecisionBreakdownQueryError = ErrorType<unknown>;
 export function useGetDecisionBreakdown<
   TData = Awaited<ReturnType<typeof getDecisionBreakdown>>,
   TError = ErrorType<unknown>,
->(options?: {
-  query?: UseQueryOptions<
-    Awaited<ReturnType<typeof getDecisionBreakdown>>,
+>(
+  params?: GetDecisionBreakdownParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDecisionBreakdown>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDecisionBreakdownQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get chart data aggregated by date
+ */
+export const getGetDashboardChartsUrl = (params?: GetDashboardChartsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/charts?${stringifiedParams}`
+    : `/api/dashboard/charts`;
+};
+
+export const getDashboardCharts = async (
+  params?: GetDashboardChartsParams,
+  options?: RequestInit,
+): Promise<ChartDataPoint[]> => {
+  return customFetch<ChartDataPoint[]>(getGetDashboardChartsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetDashboardChartsQueryKey = (
+  params?: GetDashboardChartsParams,
+) => {
+  return [`/api/dashboard/charts`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetDashboardChartsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getDashboardCharts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardChartsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardCharts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetDashboardChartsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getDashboardCharts>>
+  > = ({ signal }) => getDashboardCharts(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getDashboardCharts>>,
     TError,
     TData
-  >;
-  request?: SecondParameter<typeof customFetch>;
-}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetDecisionBreakdownQueryOptions(options);
+  > & { queryKey: QueryKey };
+};
+
+export type GetDashboardChartsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getDashboardCharts>>
+>;
+export type GetDashboardChartsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get chart data aggregated by date
+ */
+
+export function useGetDashboardCharts<
+  TData = Awaited<ReturnType<typeof getDashboardCharts>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetDashboardChartsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getDashboardCharts>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetDashboardChartsQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
