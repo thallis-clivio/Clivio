@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight, DollarSign, Loader2, CheckCircle2 } from "lucide-react";
+import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight, DollarSign, Loader2, CheckCircle2, Sparkles } from "lucide-react";
 
 function CopyButton({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -77,6 +77,20 @@ export default function Settings() {
   const userId = user?.id ?? "carregando...";
   const exampleCreative = "criativo-1";
   const utmExample = `${userId}::${exampleCreative}`;
+
+  const [paytUrl, setPaytUrl] = useState(() => localStorage.getItem("clivio_payt_checkout_url") ?? "");
+  const [urlSaved, setUrlSaved] = useState(false);
+
+  function handleSaveUrl() {
+    const trimmed = paytUrl.trim();
+    localStorage.setItem("clivio_payt_checkout_url", trimmed);
+    setUrlSaved(true);
+    setTimeout(() => setUrlSaved(false), 2500);
+  }
+
+  const exampleTrackingLink = paytUrl.trim()
+    ? `${paytUrl.trim()}${paytUrl.trim().includes("?") ? "&" : "?"}utm_content=${userId}::${exampleCreative}`
+    : null;
 
   const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
   const [loading, setLoading] = useState(true);
@@ -238,6 +252,53 @@ export default function Settings() {
               <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-none" />
               <span>Não compartilhe este ID publicamente. Ele é usado para separar seus dados dos dados de outros usuários.</span>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Checkout URL — auto tracking link generator */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Link de Rastreamento Automático</CardTitle>
+            </div>
+            <CardDescription>
+              Cole aqui a URL base do checkout Payt. O Clivio vai gerar o link completo com utm_content já configurado para cada criativo — basta copiar e colar no seu anúncio.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">URL base do checkout (ex: https://pay.payt.com.br/checkout/meu-produto)</Label>
+              <div className="flex gap-2">
+                <Input
+                  placeholder="https://pay.payt.com.br/checkout/..."
+                  value={paytUrl}
+                  onChange={e => { setPaytUrl(e.target.value); setUrlSaved(false); }}
+                  className="bg-muted/30 border-border focus:border-primary font-mono text-sm"
+                />
+                <Button onClick={handleSaveUrl} size="sm" className="shrink-0 gap-1.5">
+                  {urlSaved
+                    ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> Salvo!</>
+                    : "Salvar"
+                  }
+                </Button>
+              </div>
+            </div>
+            {exampleTrackingLink ? (
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground font-medium">Exemplo de link gerado para <code className="bg-muted px-1 rounded">{exampleCreative}</code>:</p>
+                <div className="flex items-center gap-2 bg-muted/40 border border-border rounded-lg px-4 py-3">
+                  <span className="flex-1 font-mono text-xs text-foreground break-all">{exampleTrackingLink}</span>
+                  <CopyButton value={exampleTrackingLink} />
+                </div>
+                <p className="text-[11px] text-green-400 flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Na Central de Criativos, cada criativo terá seu próprio link pronto para copiar.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Configure a URL acima para que cada criativo tenha um link de rastreamento completo gerado automaticamente.</p>
+            )}
           </CardContent>
         </Card>
 

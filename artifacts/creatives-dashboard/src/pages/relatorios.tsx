@@ -1,11 +1,9 @@
 import { useState, useMemo } from "react";
+import { Link } from "wouter";
 import {
   useListCreatives, getListCreativesQueryKey,
-  useGetDashboardSummary, getGetDashboardSummaryQueryKey,
 } from "@workspace/api-client-react";
-import {
-  ListCreativesParams, GetDashboardSummaryParams,
-} from "@workspace/api-client-react";
+import { ListCreativesParams } from "@workspace/api-client-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,10 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { Download, DollarSign, Target, TrendingUp, Activity, ShoppingCart, ArrowDown, ArrowUp, ChevronsUpDown } from "lucide-react";
+import {
+  Download, ArrowRight, ArrowDown, ArrowUp, ChevronsUpDown,
+  Trophy, Medal, Award, Layers, PieChart, TrendingUp,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
-import { ArrowRight } from "lucide-react";
 
 type DateFilter = "weekly" | "daily" | "monthly" | "all" | "custom";
 
@@ -27,15 +26,31 @@ const DATE_FILTER_LABELS: Record<Exclude<DateFilter, "custom">, string> = {
   all: "30 dias",
 };
 
+const PLAN_FIELDS = [
+  { key: "sales5m",  label: "5 meses",  color: "#818cf8" },
+  { key: "sales7m",  label: "7 meses",  color: "#6366f1" },
+  { key: "sales9m",  label: "9 meses",  color: "#4f46e5" },
+  { key: "sales12m", label: "12 meses", color: "#7c3aed" },
+  { key: "sales16m", label: "16 meses", color: "#9333ea" },
+  { key: "sales20m", label: "20 meses", color: "#c026d3" },
+] as const;
+
+const MEDAL = [
+  { Icon: Trophy, color: "text-yellow-400", ring: "ring-yellow-400/20 bg-yellow-400/5",  label: "1º" },
+  { Icon: Medal,  color: "text-slate-300",  ring: "ring-slate-300/20 bg-slate-300/5",    label: "2º" },
+  { Icon: Award,  color: "text-orange-500", ring: "ring-orange-500/20 bg-orange-500/5",  label: "3º" },
+];
+
+type SortKey = "name" | "spend" | "commission" | "roas" | "cpa" | "totalSales";
+
 function getDecisionBadgeClass(decision: string, monitorarReason?: string | null) {
   switch (decision) {
-    case "ESCALAR": return "bg-green-500/20 text-green-500 border-green-500/30";
-    case "MONITORAR":
-      return monitorarReason === "decaindo"
-        ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
-        : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
-    case "PAUSAR": return "bg-red-500/20 text-red-500 border-red-500/30";
-    default: return "bg-gray-500/20 text-gray-500 border-gray-500/30";
+    case "ESCALAR":   return "bg-green-500/20 text-green-500 border-green-500/30";
+    case "MONITORAR": return monitorarReason === "decaindo"
+      ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
+      : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    case "PAUSAR":    return "bg-red-500/20 text-red-500 border-red-500/30";
+    default:          return "bg-gray-500/20 text-gray-500 border-gray-500/30";
   }
 }
 
@@ -46,51 +61,73 @@ function getCpaColor(cpa: number, totalSales: number) {
   return "text-red-400";
 }
 
-type SortKey = "name" | "spend" | "commission" | "roas" | "cpa" | "totalSales";
-
 export default function Relatorios() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("weekly");
-  const [customFrom, setCustomFrom] = useState<string>("");
-  const [customTo, setCustomTo] = useState<string>("");
-  const [sortBy, setSortBy] = useState<SortKey>("roas");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo]   = useState("");
+  const [sortBy, setSortBy]       = useState<SortKey>("commission");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
-  const params = useMemo((): ListCreativesParams & GetDashboardSummaryParams => {
+  const params = useMemo((): ListCreativesParams => {
     if (dateFilter === "custom") {
-      return { dateFrom: customFrom || undefined, dateTo: customTo || undefined, sortBy: "roas", sortOrder: "desc", dateFilter: "all" };
+      return { dateFrom: customFrom || undefined, dateTo: customTo || undefined, sortBy: "commission", sortOrder: "desc", dateFilter: "all" };
     }
-    return { dateFilter, sortBy: "roas", sortOrder: "desc" };
+    return { dateFilter, sortBy: "commission", sortOrder: "desc" };
   }, [dateFilter, customFrom, customTo]);
 
   const { data: creatives, isLoading } = useListCreatives(params, {
     query: { queryKey: getListCreativesQueryKey(params) }
   });
 
-  const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary(params, {
-    query: { queryKey: getGetDashboardSummaryQueryKey(params) }
-  });
+  const totalSpend      = useMemo(() => creatives?.reduce((s, c) => s + c.spend, 0) ?? 0, [creatives]);
+  const totalCommission = useMemo(() => creatives?.reduce((s, c) => s + c.commission, 0) ?? 0, [creatives]);
+  const avgRoas         = useMemo(() => {
+    const w = creatives?.filter(c => c.roas > 0) ?? [];
+    return w.length ? w.reduce((s, c) => s + c.roas, 0) / w.length : 0;
+  }, [creatives]);
+
+  const podium = useMemo(() => {
+    if (!creatives) return [];
+    return [...creatives].filter(c => c.commission > 0).sort((a, b) => b.commission - a.commission).slice(0, 3);
+  }, [creatives]);
+
+  const planMix = useMemo(() => {
+    if (!creatives || creatives.length === 0) return [];
+    const totals = PLAN_FIELDS.map(p => ({
+      label: p.label,
+      color: p.color,
+      vendas: creatives.reduce((sum, c) => sum + ((c as unknown as Record<string, unknown>)[p.key] as number ?? 0), 0),
+    }));
+    return totals.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas);
+  }, [creatives]);
+
+  const pareto = useMemo(() => {
+    if (!creatives) return { heroes: [] as NonNullable<typeof creatives>, rest: [] as NonNullable<typeof creatives>, total: 0 };
+    const srt = [...creatives].filter(c => c.commission > 0).sort((a, b) => b.commission - a.commission);
+    const total = srt.reduce((s, c) => s + c.commission, 0);
+    if (total === 0) return { heroes: [] as typeof srt, rest: [] as typeof srt, total: 0 };
+    let cum = 0, cutoff = srt.length;
+    for (let i = 0; i < srt.length; i++) {
+      cum += srt[i].commission;
+      if (cum / total >= 0.8) { cutoff = i + 1; break; }
+    }
+    return { heroes: srt.slice(0, cutoff), rest: srt.slice(cutoff), total };
+  }, [creatives]);
 
   const sorted = useMemo(() => {
     if (!creatives) return [];
     return [...creatives].sort((a, b) => {
       const aVal = sortBy === "name" ? a.name : (a as unknown as Record<string, number>)[sortBy];
       const bVal = sortBy === "name" ? b.name : (b as unknown as Record<string, number>)[sortBy];
-      if (typeof aVal === "string" && typeof bVal === "string") {
+      if (typeof aVal === "string" && typeof bVal === "string")
         return sortOrder === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-      }
-      return sortOrder === "asc"
-        ? (aVal as number) - (bVal as number)
-        : (bVal as number) - (aVal as number);
+      return sortOrder === "asc" ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
     });
   }, [creatives, sortBy, sortOrder]);
 
   function handleSort(col: SortKey) {
-    if (sortBy === col) {
-      setSortOrder(prev => prev === "asc" ? "desc" : "asc");
-    } else {
-      setSortBy(col);
-      setSortOrder("desc");
-    }
+    if (sortBy === col) setSortOrder(prev => prev === "asc" ? "desc" : "asc");
+    else { setSortBy(col); setSortOrder("desc"); }
   }
 
   function exportCsv() {
@@ -98,15 +135,10 @@ export default function Relatorios() {
     const rows = [
       ["Criativo", "Data", "Gasto (R$)", "Comissão (R$)", "ROAS", "CPA (R$)", "Vendas", "Decisão", "Previsibilidade"],
       ...sorted.map(c => [
-        c.name,
-        formatDate(c.date),
-        c.spend.toFixed(2),
-        c.commission.toFixed(2),
-        c.roas.toFixed(2),
+        c.name, formatDate(c.date),
+        c.spend.toFixed(2), c.commission.toFixed(2), c.roas.toFixed(2),
         c.totalSales > 0 ? c.cpa.toFixed(2) : "-",
-        c.totalSales,
-        c.decision,
-        c.predictabilityLabel,
+        c.totalSales, c.decision, c.predictabilityLabel,
       ]),
     ];
     const csv = "\uFEFF" + rows.map(r => r.join(";")).join("\n");
@@ -122,10 +154,7 @@ export default function Relatorios() {
   function SortHead({ col, label, className }: { col: SortKey; label: string; className?: string }) {
     const active = sortBy === col;
     return (
-      <TableHead
-        className={`cursor-pointer select-none hover:text-foreground transition-colors ${className ?? ""}`}
-        onClick={() => handleSort(col)}
-      >
+      <TableHead className={`cursor-pointer select-none hover:text-foreground transition-colors ${className ?? ""}`} onClick={() => handleSort(col)}>
         <span className="inline-flex items-center gap-1 justify-end w-full">
           {label}
           {active
@@ -144,7 +173,7 @@ export default function Relatorios() {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Relatórios</h2>
-            <p className="text-muted-foreground">Análise detalhada de performance por período.</p>
+            <p className="text-muted-foreground">Análise inteligente de performance por período.</p>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-md border border-border overflow-hidden">
@@ -164,52 +193,166 @@ export default function Relatorios() {
               <DateRangePicker
                 from={customFrom}
                 to={customTo}
-                onChange={(f, t) => {
-                  setCustomFrom(f);
-                  setCustomTo(t);
-                  if (f && t) setDateFilter("custom");
-                }}
+                onChange={(f, t) => { setCustomFrom(f); setCustomTo(t); if (f && t) setDateFilter("custom"); }}
                 isActive={dateFilter === "custom"}
                 onActivate={() => setDateFilter("custom")}
               />
             </div>
-            <Button
-              variant="outline"
-              className="gap-2"
-              onClick={exportCsv}
-              disabled={!sorted.length}
-            >
+            <Button variant="outline" className="gap-2" onClick={exportCsv} disabled={!sorted.length}>
               <Download className="w-4 h-4" />
               Exportar CSV
             </Button>
           </div>
         </div>
 
-        {/* KPI Summary */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* 3 métricas do período */}
+        <div className="grid grid-cols-3 gap-4">
           {[
-            { label: "Gasto Total", value: isSummaryLoading ? null : formatCurrency(summary?.totalSpend ?? 0), icon: <DollarSign className="w-3.5 h-3.5 text-muted-foreground" />, color: "text-foreground" },
-            { label: "Comissão Total", value: isSummaryLoading ? null : formatCurrency(summary?.totalCommission ?? 0), icon: <Target className="w-3.5 h-3.5 text-muted-foreground" />, color: "text-foreground" },
-            { label: "ROAS Médio", value: isSummaryLoading ? null : formatRoas(summary?.averageRoas ?? 0), icon: <TrendingUp className="w-3.5 h-3.5 text-muted-foreground" />, color: "text-primary" },
-            { label: "CPA Médio", value: isSummaryLoading ? null : ((summary?.totalSales ?? 0) === 0 ? "—" : formatCurrency(summary?.averageCpa ?? 0)), icon: <Activity className="w-3.5 h-3.5 text-muted-foreground" />, color: getCpaColor(summary?.averageCpa ?? 0, summary?.totalSales ?? 0) },
-            { label: "Total Vendas", value: isSummaryLoading ? null : String(summary?.totalSales ?? 0), icon: <ShoppingCart className="w-3.5 h-3.5 text-muted-foreground" />, color: "text-foreground" },
-          ].map(({ label, value, icon, color }) => (
+            { label: "Investido",    value: isLoading ? null : formatCurrency(totalSpend),      sub: "no período" },
+            { label: "Comissão",     value: isLoading ? null : formatCurrency(totalCommission), sub: "estimada total" },
+            { label: "ROAS Médio",   value: isLoading ? null : formatRoas(avgRoas),             sub: "dos criativos ativos", hi: true },
+          ].map(({ label, value, sub, hi }) => (
             <Card key={label} className="border-border/50 bg-card/50">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground">{label}</CardTitle>
-                {icon}
-              </CardHeader>
-              <CardContent>
+              <CardContent className="pt-5 pb-4">
+                <p className="text-xs text-muted-foreground mb-1">{label}</p>
                 {value === null
                   ? <Skeleton className="h-7 w-24" />
-                  : <div className={`text-xl font-bold tabular-nums ${color}`}>{value}</div>
+                  : <p className={`text-2xl font-bold tabular-nums ${hi ? "text-primary" : "text-foreground"}`}>{value}</p>
                 }
+                <p className="text-[11px] text-muted-foreground mt-0.5">{sub}</p>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Table */}
+        {/* Pódio */}
+        <Card className="border-border/50 bg-card/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-yellow-400" />
+              <CardTitle className="text-base">Pódio do Período</CardTitle>
+              <span className="text-xs text-muted-foreground">criativos com maior comissão</span>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="grid grid-cols-3 gap-4">{[1,2,3].map(i => <Skeleton key={i} className="h-28" />)}</div>
+            ) : podium.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4">Nenhum criativo com comissão gerada neste período.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {podium.map((c, i) => {
+                  const m = MEDAL[i];
+                  return (
+                    <Link key={c.id} href={`/creatives/${c.id}`}>
+                      <div className={`rounded-lg border ring-1 p-4 space-y-2 hover:opacity-80 transition-opacity cursor-pointer ${m.ring} border-border/50`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-muted-foreground">{m.label} lugar</span>
+                          <m.Icon className={`w-4 h-4 ${m.color}`} />
+                        </div>
+                        <p className="font-semibold text-sm truncate text-foreground">{c.name}</p>
+                        <div>
+                          <p className="text-lg font-bold tabular-nums text-primary">{formatCurrency(c.commission)}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">ROAS {formatRoas(c.roas)} · {c.totalSales} vendas</p>
+                        </div>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Mix de Planos + Pareto */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+          {/* Mix de Planos */}
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <Layers className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">Mix de Planos</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Quais planos de assinatura mais vendem — oriente criativos e copy para o plano mais comprado.</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
+              ) : planMix.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">Nenhuma venda registrada neste período.</p>
+              ) : (
+                <div className="space-y-3 pt-1">
+                  {planMix.map(p => {
+                    const total = planMix.reduce((s, x) => s + x.vendas, 0);
+                    const pct   = total > 0 ? Math.round((p.vendas / total) * 100) : 0;
+                    return (
+                      <div key={p.label} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-medium text-foreground">{p.label}</span>
+                          <span className="tabular-nums text-muted-foreground">{p.vendas} venda{p.vendas !== 1 ? "s" : ""} · {pct}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.color }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[11px] text-muted-foreground pt-1">
+                    {planMix.reduce((s, p) => s + p.vendas, 0)} vendas totais no período
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Concentração de Comissão */}
+          <Card className="border-border/50 bg-card/50">
+            <CardHeader className="pb-2">
+              <div className="flex items-center gap-2">
+                <PieChart className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">Concentração de Comissão</CardTitle>
+              </div>
+              <p className="text-xs text-muted-foreground">Quais criativos geram 80% da sua receita — escale esses, corte o resto.</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
+              ) : pareto.total === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">Nenhuma comissão gerada neste período.</p>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20 mb-3">
+                    <TrendingUp className="w-3.5 h-3.5 text-primary flex-none" />
+                    <p className="text-xs text-primary font-medium">
+                      {pareto.heroes.length === 1 ? "1 criativo gera" : `${pareto.heroes.length} criativos geram`} 80% da comissão do período
+                    </p>
+                  </div>
+                  {pareto.heroes.map((c, i) => {
+                    const pct = Math.round((c.commission / pareto.total) * 100);
+                    return (
+                      <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-green-500/5 border border-green-500/10">
+                        <span className="text-xs font-bold text-green-400 w-5 text-center shrink-0">{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate text-foreground">{c.name}</p>
+                          <p className="text-xs text-muted-foreground">{formatCurrency(c.commission)} · {pct}% do total</p>
+                        </div>
+                        <Badge variant="outline" className="text-xs border bg-green-500/10 text-green-400 border-green-500/20 shrink-0">Top</Badge>
+                      </div>
+                    );
+                  })}
+                  {pareto.rest.length > 0 && (
+                    <p className="text-[11px] text-muted-foreground pl-2 pt-1">
+                      + {pareto.rest.length} outro{pareto.rest.length > 1 ? "s" : ""} criativo{pareto.rest.length > 1 ? "s" : ""} compõem os {100 - Math.round((pareto.heroes.reduce((s, c) => s + c.commission, 0) / pareto.total) * 100)}% restantes
+                    </p>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Tabela completa */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
             <CardTitle className="text-base">
@@ -228,11 +371,11 @@ export default function Relatorios() {
                         : <ChevronsUpDown className="w-3 h-3 opacity-30" />}
                     </span>
                   </TableHead>
-                  <SortHead col="spend" label="Gasto" className="text-right" />
+                  <SortHead col="spend"      label="Gasto"    className="text-right" />
                   <SortHead col="commission" label="Comissão" className="text-right" />
-                  <SortHead col="roas" label="ROAS" className="text-right" />
-                  <SortHead col="cpa" label="CPA" className="text-right" />
-                  <SortHead col="totalSales" label="Vendas" className="text-right" />
+                  <SortHead col="roas"       label="ROAS"     className="text-right" />
+                  <SortHead col="cpa"        label="CPA"      className="text-right" />
+                  <SortHead col="totalSales" label="Vendas"   className="text-right" />
                   <TableHead>Decisão</TableHead>
                   <TableHead></TableHead>
                 </TableRow>

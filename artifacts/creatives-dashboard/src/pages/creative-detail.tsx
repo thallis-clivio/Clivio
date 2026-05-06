@@ -6,12 +6,12 @@ import {
   getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
   getGetPerformanceSummaryQueryKey, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
-import { useAuth } from "@clerk/react";
+import { useAuth, useUser } from "@clerk/react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban, Loader2 } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban, Loader2, Link2, Copy, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -116,7 +116,9 @@ export default function CreativeDetail() {
   const [claudeText, setClaudeText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [claudeError, setClaudeError] = useState("");
+  const [trackingCopied, setTrackingCopied] = useState(false);
   const { getToken } = useAuth();
+  const { user } = useUser();
 
   const { data: creative, isLoading } = useGetCreative(creativeId, {
     query: { queryKey: getGetCreativeQueryKey(creativeId), enabled: !!creativeId }
@@ -311,6 +313,42 @@ export default function CreativeDetail() {
             </Button>
           </div>
         </div>
+
+        {/* Tracking Link */}
+        {(() => {
+          const base = localStorage.getItem("clivio_payt_checkout_url")?.trim() ?? "";
+          const utmContent = `${user?.id ?? ""}::${creative.name}`;
+          const link = base
+            ? `${base}${base.includes("?") ? "&" : "?"}utm_content=${utmContent}`
+            : utmContent;
+          const hasBase = base.length > 0;
+          return (
+            <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-muted/40 border border-border/60">
+              <Link2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] text-muted-foreground mb-0.5">
+                  {hasBase ? "Link de rastreamento" : "UTM Content (configure a URL base em Configurações para o link completo)"}
+                </p>
+                <p className="font-mono text-xs text-foreground truncate">{link}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 gap-1.5 h-7 text-xs"
+                onClick={() => {
+                  navigator.clipboard.writeText(link);
+                  setTrackingCopied(true);
+                  setTimeout(() => setTrackingCopied(false), 2000);
+                }}
+              >
+                {trackingCopied
+                  ? <><Check className="h-3 w-3 text-green-400" /> Copiado</>
+                  : <><Copy className="h-3 w-3" /> Copiar</>
+                }
+              </Button>
+            </div>
+          );
+        })()}
 
         {/* Claude Analysis */}
         {(claudeText || isStreaming || claudeError) && (

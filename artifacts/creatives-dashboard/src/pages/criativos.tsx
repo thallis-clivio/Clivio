@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { useUser } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListCreatives, getListCreativesQueryKey,
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, TrendingDown, ChevronsUpDown, Rocket, Ban } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, TrendingDown, ChevronsUpDown, Rocket, Ban, Link2, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,12 +103,39 @@ function SortableHead({
   );
 }
 
+function CopyLinkButton({ creativeName, userId }: { creativeName: string; userId: string }) {
+  const [copied, setCopied] = useState(false);
+  function handleCopy(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const base = localStorage.getItem("clivio_payt_checkout_url")?.trim() ?? "";
+    const utm  = `${userId}::${creativeName}`;
+    const link = base ? `${base}${base.includes("?") ? "&" : "?"}utm_content=${utm}` : utm;
+    navigator.clipboard.writeText(link);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="opacity-0 group-hover:opacity-100 transition-opacity"
+      onClick={handleCopy}
+      title="Copiar link de rastreamento"
+    >
+      {copied ? <Check className="w-4 h-4 text-green-400" /> : <Link2 className="w-4 h-4" />}
+    </Button>
+  );
+}
+
 export default function Criativos() {
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
+  const { user } = useUser();
+  const userId = user?.id ?? "";
   const queryClient = useQueryClient();
 
   function handleSort(col: ListCreativesSortBy) {
@@ -285,11 +313,14 @@ export default function Criativos() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Link href={`/creatives/${creative.id}`}>
-                          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-view-${creative.id}`}>
-                            <ArrowRight className="w-4 h-4" />
-                          </Button>
-                        </Link>
+                        <div className="flex items-center">
+                          <CopyLinkButton creativeName={creative.name} userId={userId} />
+                          <Link href={`/creatives/${creative.id}`}>
+                            <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity" data-testid={`button-view-${creative.id}`}>
+                              <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
