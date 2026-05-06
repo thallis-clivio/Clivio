@@ -23,6 +23,7 @@ import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, TrendingDown, ChevronsU
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DecisionTooltip } from "@/components/decision-badge";
 
 function getDecisionColor(decision: string, _monitorarReason?: string | null) {
   switch (decision) {
@@ -335,22 +336,24 @@ export default function Criativos() {
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <Badge variant="outline" className={`text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
-                            {creative.decision === "ESCALAR" && <Rocket className="w-2.5 h-2.5" />}
-                            {creative.decision === "LUCRATIVO" && <Rocket className="w-2.5 h-2.5" />}
-                            {creative.decision === "MONITORAR" && (
-                              creative.monitorarReason === "decaindo"
-                                ? <TrendingDown className="w-2.5 h-2.5" />
-                                : <Activity className="w-2.5 h-2.5" />
-                            )}
-                            {creative.decision === "ATENCAO" && <Activity className="w-2.5 h-2.5" />}
-                            {creative.decision === "PAUSAR" && (
-                              creative.pausarReason === "semVendas"
-                                ? <Ban className="w-2.5 h-2.5" />
-                                : <TrendingDown className="w-2.5 h-2.5" />
-                            )}
-                            {getDecisionLabel(creative.decision)}
-                          </Badge>
+                          <DecisionTooltip decision={creative.decision}>
+                            <Badge variant="outline" className={`text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                              {creative.decision === "ESCALAR" && <Rocket className="w-2.5 h-2.5" />}
+                              {creative.decision === "LUCRATIVO" && <Rocket className="w-2.5 h-2.5" />}
+                              {creative.decision === "MONITORAR" && (
+                                creative.monitorarReason === "decaindo"
+                                  ? <TrendingDown className="w-2.5 h-2.5" />
+                                  : <Activity className="w-2.5 h-2.5" />
+                              )}
+                              {creative.decision === "ATENCAO" && <Activity className="w-2.5 h-2.5" />}
+                              {creative.decision === "PAUSAR" && (
+                                creative.pausarReason === "semVendas"
+                                  ? <Ban className="w-2.5 h-2.5" />
+                                  : <TrendingDown className="w-2.5 h-2.5" />
+                              )}
+                              {getDecisionLabel(creative.decision)}
+                            </Badge>
+                          </DecisionTooltip>
                           {creative.decision === "ESCALAR" && (
                             <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
                               <Rocket className="w-2.5 h-2.5" />

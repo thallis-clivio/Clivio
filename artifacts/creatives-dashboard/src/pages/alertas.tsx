@@ -11,6 +11,7 @@ import {
   AlertTriangle, Rocket, Ban, TrendingDown, Activity,
   CheckCircle, ArrowRight, BellOff, Plus,
 } from "lucide-react";
+import { DecisionTooltip } from "@/components/decision-badge";
 
 interface Creative {
   id: number;
@@ -70,18 +71,20 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: AlertUr
             <p className="font-semibold text-foreground text-sm">{creative.name}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{getAlertMessage()}</p>
           </div>
-          <Badge
-            variant="outline"
-            className={`text-xs shrink-0 ${
-              urgency === "critical" ? "text-red-400 border-red-500/50" :
-              urgency === "warning"  ? "text-orange-400 border-orange-500/50" :
-              urgency === "monitor"  ? "text-yellow-400 border-yellow-500/50" :
-              urgency === "info"     ? "text-blue-400 border-blue-500/50" :
-              "text-green-400 border-green-500/50"
-            }`}
-          >
-            {creative.decision === "ATENCAO" ? "ATENÇÃO" : creative.decision}
-          </Badge>
+          <DecisionTooltip decision={creative.decision}>
+            <Badge
+              variant="outline"
+              className={`text-xs shrink-0 ${
+                urgency === "critical" ? "text-red-400 border-red-500/50" :
+                urgency === "warning"  ? "text-orange-400 border-orange-500/50" :
+                urgency === "monitor"  ? "text-yellow-400 border-yellow-500/50" :
+                urgency === "info"     ? "text-blue-400 border-blue-500/50" :
+                "text-green-400 border-green-500/50"
+              }`}
+            >
+              {creative.decision === "ATENCAO" ? "ATENÇÃO" : creative.decision}
+            </Badge>
+          </DecisionTooltip>
         </div>
         <div className="flex items-center gap-4 mt-2.5 flex-wrap">
           <span className="text-xs text-muted-foreground">

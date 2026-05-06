@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreativeForm } from "@/components/creative-form";
+import { DecisionTooltip } from "@/components/decision-badge";
 import { useState, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -276,22 +277,24 @@ export default function CreativeDetail() {
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
                 <div className="flex flex-col gap-0.5">
-                  <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
-                    {creative.decision === "ESCALAR" && <Rocket className="w-3 h-3" />}
-                    {creative.decision === "LUCRATIVO" && <Rocket className="w-3 h-3" />}
-                    {creative.decision === "MONITORAR" && (
-                      creative.monitorarReason === "decaindo"
-                        ? <TrendingDown className="w-3 h-3" />
-                        : <Activity className="w-3 h-3" />
-                    )}
-                    {creative.decision === "ATENCAO" && <Activity className="w-3 h-3" />}
-                    {creative.decision === "PAUSAR" && (
-                      creative.pausarReason === "semVendas"
-                        ? <Ban className="w-3 h-3" />
-                        : <TrendingDown className="w-3 h-3" />
-                    )}
-                    {getDecisionLabel(creative.decision)}
-                  </Badge>
+                  <DecisionTooltip decision={creative.decision}>
+                    <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
+                      {creative.decision === "ESCALAR" && <Rocket className="w-3 h-3" />}
+                      {creative.decision === "LUCRATIVO" && <Rocket className="w-3 h-3" />}
+                      {creative.decision === "MONITORAR" && (
+                        creative.monitorarReason === "decaindo"
+                          ? <TrendingDown className="w-3 h-3" />
+                          : <Activity className="w-3 h-3" />
+                      )}
+                      {creative.decision === "ATENCAO" && <Activity className="w-3 h-3" />}
+                      {creative.decision === "PAUSAR" && (
+                        creative.pausarReason === "semVendas"
+                          ? <Ban className="w-3 h-3" />
+                          : <TrendingDown className="w-3 h-3" />
+                      )}
+                      {getDecisionLabel(creative.decision)}
+                    </Badge>
+                  </DecisionTooltip>
                   {creative.decision === "ESCALAR" && (
                     <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
                       <Rocket className="w-2.5 h-2.5" />
