@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
-import { useUser } from "@clerk/react";
+import { useUser, useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useListCreatives, getListCreativesQueryKey,
@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, TrendingDown, ChevronsUpDown, Rocket, Ban, Link2, Check } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, TrendingDown, ChevronsUpDown, Rocket, Ban, Link2, Check, FlaskConical } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,8 +133,10 @@ export default function Criativos() {
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const { user } = useUser();
+  const { getToken } = useAuth();
   const userId = user?.id ?? "";
   const queryClient = useQueryClient();
 
@@ -162,6 +164,20 @@ export default function Criativos() {
     queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetPerformanceSummaryQueryKey() });
+  }
+
+  async function handleSeedDemo() {
+    setIsSeeding(true);
+    try {
+      const token = await getToken();
+      await fetch("/api/seed-demo", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      invalidateAll();
+    } finally {
+      setIsSeeding(false);
+    }
   }
 
   return (
@@ -247,8 +263,27 @@ export default function Criativos() {
                   ))
                 ) : creatives?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-12 text-muted-foreground">
-                      Nenhum criativo encontrado. Clique em "Adicionar Criativo" para começar.
+                    <TableCell colSpan={9} className="py-16">
+                      <div className="flex flex-col items-center gap-4 text-center">
+                        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                          <Activity className="w-6 h-6 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">Nenhum criativo ainda</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Adicione seu primeiro criativo ou carregue dados de demonstração para explorar o painel.
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          className="gap-2"
+                          onClick={handleSeedDemo}
+                          disabled={isSeeding}
+                        >
+                          <FlaskConical className="w-4 h-4" />
+                          {isSeeding ? "Carregando..." : "Carregar Dados de Demonstração"}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (

@@ -15,8 +15,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, FlaskConical } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@clerk/react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Button } from "@/components/ui/button";
 
 type DateFilter = "weekly" | "daily" | "monthly" | "all" | "custom";
 
@@ -143,6 +146,26 @@ export default function Home() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("weekly");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const { getToken } = useAuth();
+  const queryClient = useQueryClient();
+
+  async function handleSeedDemo() {
+    setIsSeeding(true);
+    try {
+      const token = await getToken();
+      await fetch("/api/seed-demo", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetPerformanceSummaryQueryKey() });
+    } finally {
+      setIsSeeding(false);
+    }
+  }
 
   const dashParams = useMemo((): GetDashboardSummaryParams & GetDashboardChartsParams & GetPerformanceSummaryParams => {
     if (dateFilter === "custom") {
@@ -209,6 +232,31 @@ export default function Home() {
             />
           </div>
         </div>
+
+        {/* Banner de boas-vindas quando não há criativos */}
+        {!isSummaryLoading && (summary?.totalCreatives ?? 0) === 0 && (
+          <div className="flex items-center justify-between gap-4 p-4 rounded-lg border border-border bg-muted/30">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                <FlaskConical className="w-4 h-4 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Nenhum criativo cadastrado ainda</p>
+                <p className="text-xs text-muted-foreground">Carregue dados de demonstração para explorar todas as funcionalidades do painel.</p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-2"
+              onClick={handleSeedDemo}
+              disabled={isSeeding}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              {isSeeding ? "Carregando..." : "Carregar Demonstração"}
+            </Button>
+          </div>
+        )}
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
