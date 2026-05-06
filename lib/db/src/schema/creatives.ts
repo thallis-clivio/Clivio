@@ -16,7 +16,7 @@ export const creativesTable = pgTable("creatives", {
   sales12m: integer("sales_12m").notNull().default(0),
   sales16m: integer("sales_16m").notNull().default(0),
   sales20m: integer("sales_20m").notNull().default(0),
-  ctr: real("ctr").notNull(),
+  ctr: real("ctr").notNull().default(0),
   // hookRate kept in DB for backward compatibility, defaulted to 0
   hookRate: real("hook_rate").notNull().default(0),
   daysWithoutSales: integer("days_without_sales").notNull().default(0),

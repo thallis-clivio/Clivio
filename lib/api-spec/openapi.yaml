@@ -398,7 +398,6 @@ components:
         - sales12m
         - sales16m
         - sales20m
-        - ctr
         - daysWithoutSales
 
     CreativeWithMetrics:

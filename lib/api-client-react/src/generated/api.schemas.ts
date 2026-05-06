@@ -23,7 +23,7 @@ export interface CreateCreativeBody {
   sales12m: number;
   sales16m: number;
   sales20m: number;
-  ctr: number;
+  ctr?: number;
   daysWithoutSales: number;
 }
 

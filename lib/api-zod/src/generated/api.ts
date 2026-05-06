@@ -38,7 +38,7 @@ export const ListCreativesResponseItem = zod
     sales12m: zod.number(),
     sales16m: zod.number(),
     sales20m: zod.number(),
-    ctr: zod.number(),
+    ctr: zod.number().optional(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -74,7 +74,7 @@ export const CreateCreativeBody = zod.object({
   sales12m: zod.number(),
   sales16m: zod.number(),
   sales20m: zod.number(),
-  ctr: zod.number(),
+  ctr: zod.number().optional(),
   daysWithoutSales: zod.number(),
 });
 
@@ -96,7 +96,7 @@ export const GetCreativeResponse = zod
     sales12m: zod.number(),
     sales16m: zod.number(),
     sales20m: zod.number(),
-    ctr: zod.number(),
+    ctr: zod.number().optional(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -135,7 +135,7 @@ export const UpdateCreativeBody = zod.object({
   sales12m: zod.number(),
   sales16m: zod.number(),
   sales20m: zod.number(),
-  ctr: zod.number(),
+  ctr: zod.number().optional(),
   daysWithoutSales: zod.number(),
 });
 
@@ -150,7 +150,7 @@ export const UpdateCreativeResponse = zod
     sales12m: zod.number(),
     sales16m: zod.number(),
     sales20m: zod.number(),
-    ctr: zod.number(),
+    ctr: zod.number().optional(),
     daysWithoutSales: zod.number(),
   })
   .and(
@@ -249,7 +249,7 @@ export const GetDashboardSummaryResponse = zod.object({
       sales12m: zod.number(),
       sales16m: zod.number(),
       sales20m: zod.number(),
-      ctr: zod.number(),
+      ctr: zod.number().optional(),
       daysWithoutSales: zod.number(),
     })
     .and(

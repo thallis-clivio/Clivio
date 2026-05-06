@@ -18,7 +18,6 @@ const formSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   date: z.string().min(1, "Data é obrigatória"),
   spend: z.coerce.number().min(0, "Deve ser >= 0"),
-  ctr: z.coerce.number().min(0, "Deve ser >= 0"),
   daysWithoutSales: z.coerce.number().min(0, "Deve ser >= 0"),
   sales5m: z.coerce.number().min(0, "Deve ser >= 0"),
   sales7m: z.coerce.number().min(0, "Deve ser >= 0"),
@@ -45,7 +44,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
       name: "",
       date: new Date().toISOString().split("T")[0],
       spend: 0,
-      ctr: 0,
       daysWithoutSales: 0,
       sales5m: 0,
       sales7m: 0,
@@ -62,7 +60,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         name: initialData.name,
         date: initialData.date,
         spend: initialData.spend,
-        ctr: initialData.ctr,
         daysWithoutSales: initialData.daysWithoutSales,
         sales5m: initialData.sales5m,
         sales7m: initialData.sales7m,
@@ -143,13 +140,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             <FormItem>
               <FormLabel>Dias sem Venda</FormLabel>
               <FormControl><Input type="number" min="0" {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-          <FormField control={form.control} name="ctr" render={({ field }) => (
-            <FormItem>
-              <FormLabel>CTR (%)</FormLabel>
-              <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
               <FormMessage />
             </FormItem>
           )} />
