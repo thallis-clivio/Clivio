@@ -59,12 +59,12 @@ router.post("/seed-demo", requireAuth, async (req, res) => {
     ctr: 2.4, hookRate: 0,
   });
 
-  // 4. Copa-Camisa-BR → MONITORAR Lucrativo (ROAS 3.78×, dias=1)
-  //    spend=400, 1×20m + 1×12m → commission=1510.76, ROAS=3.78×
+  // 4. Copa-Camisa-BR → MONITORAR Lucrativo (ROAS 3.42×, dias=1)
+  //    spend=1200 (12 dias × R$100), 4×20m → commission=4105.52, ROAS=3.42×
   //    Rodando há 12 dias; lastSaleAt=1 dia → MONITORAR lucrativo (ROAS>=3)
   const [c4] = await db.insert(creativesTable).values({
     userId, name: "Copa-Camisa-BR", date: daysAgo(12),
-    spend: 400, sales5m: 0, sales7m: 0, sales9m: 0, sales12m: 1, sales16m: 0, sales20m: 1,
+    spend: 1200, sales5m: 0, sales7m: 0, sales9m: 0, sales12m: 0, sales16m: 0, sales20m: 4,
     ctr: 4.8, hookRate: 0,
   }).returning();
 
@@ -77,12 +77,12 @@ router.post("/seed-demo", requireAuth, async (req, res) => {
     ctr: 3.0, hookRate: 0,
   }).returning();
 
-  // 6. Carnaval-Fantasia → MONITORAR Decaindo (ROAS 4.69×, dias=2)
-  //    spend=200, 1×16m + 1×9m → commission=938.76, ROAS=4.69×
+  // 6. Carnaval-Fantasia → MONITORAR Decaindo (ROAS 4.56×, dias=2)
+  //    spend=900 (9 dias × R$100), 4×20m → commission=4105.52, ROAS=4.56×
   //    Rodando há 9 dias; lastSaleAt=2 dias → MONITORAR decaindo (ROAS>=3.5 salva do corte)
   const [c6] = await db.insert(creativesTable).values({
     userId, name: "Carnaval-Fantasia", date: daysAgo(9),
-    spend: 200, sales5m: 0, sales7m: 0, sales9m: 1, sales12m: 0, sales16m: 1, sales20m: 0,
+    spend: 900, sales5m: 0, sales7m: 0, sales9m: 0, sales12m: 0, sales16m: 0, sales20m: 4,
     ctr: 3.3, hookRate: 0,
   }).returning();
 
