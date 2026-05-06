@@ -6,3 +6,9 @@ id = "F3u6_Q0wiyOW7ZRBUHT-K"
 uri = "file://clivio-source.tar.gz"
 type = "unspecified"
 title = "Clivio — Código Fonte Completo"
+
+[[outputs]]
+id = "wTKgvuD9D69mCK-FDHeV8"
+uri = "file://clivio-source.md"
+type = "text"
+title = "Clivio — Código Fonte Completo (.md)"
