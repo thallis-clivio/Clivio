@@ -40,9 +40,9 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - **Per-user isolation**: `userId text NOT NULL DEFAULT ''` column on creativesTable; all DB queries filter by `eq(creativesTable.userId, userId)`. Webhooks find creatives by name across all users.
 - Commission computed server-side in BRL at 54% base Payt rate: 2m×R$161,38 / 3m×R$187,38 / 5m×R$241,38 / 7m×R$295,38 / 9m×R$376,38 / 12m×R$484,38 / 16m×R$562,38 / 20m×R$1026,38
 - ROAS = commission / spend; CPA = spend / totalSales; both computed at read time (not stored)
-- Decision logic: daysWithoutSales >= 2 → PAUSAR; ROAS >= 2 AND days=0 → ESCALAR; ROAS >= 1 AND (ROAS < 2 OR days=1) → MONITORAR(reason); else PAUSAR
+- Decision logic: days>=3 → PAUSAR(semVendas); days>=2 AND ROAS<3.5 → PAUSAR(semVendas); days>=2 AND ROAS>=3.5 → MONITORAR(decaindo); ROAS>=2 AND days=0 → ESCALAR; ROAS>=1 → MONITORAR(lucrativo|decaindo); else PAUSAR(prejuizo)
 - `hookRate` column kept in DB (`real NOT NULL DEFAULT 0`), omitted from `insertCreativeSchema` and removed from API request body
-- Predictability score (0–100) = consistency (0–40) + ROAS quality (0–35) + CPA efficiency (0–25)
+- Desempenho score (0–100): corte direto (days>=3 ou days>=2 com ROAS<3.5) → RUIM capped 30; else ROAS(0–60: >=3.5→60,>=3→55,>=2→50,>=1.5→30,>=1→15) + consistência(0–40: days=0→40,days=1→30,days=2(ROAS>=3.5)→8); ROAS<1 → RUIM cap 20; >=70→EXCELENTE, >=40→BOM, else RUIM
 - AI analysis is rule-based (no external LLM call) — fast, zero cost, no API key needed
 - Orval `schemas` option removed from zod config to prevent duplicate type exports; `lib/api-zod/src/index.ts` must only export `./generated/api`
 

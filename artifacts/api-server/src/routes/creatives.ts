@@ -49,46 +49,57 @@ function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): 
   monitorarReason: "lucrativo" | "decaindo" | null;
   pausarReason: "semVendas" | "prejuizo" | null;
 } {
-  if (daysWithoutSales >= 2) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
+  // Corte por dias sem venda — independente do ROAS:
+  // 3+ dias = corte sempre; 2 dias = corte exceto ROAS >= 3.5 (ganha 1 dia extra)
+  if (daysWithoutSales >= 3) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
+  if (daysWithoutSales >= 2 && roas < 3.5) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
+  if (daysWithoutSales >= 2 && roas >= 3.5) return { decision: "MONITORAR", monitorarReason: "decaindo", pausarReason: null };
+
   if (roas >= 2 && daysWithoutSales === 0) return { decision: "ESCALAR", monitorarReason: null, pausarReason: null };
-  if (roas >= 1 && (roas < 2 || daysWithoutSales === 1)) {
-    const reason = daysWithoutSales === 1 && roas >= 2 ? "decaindo" : "lucrativo";
+  if (roas >= 1) {
+    const reason = daysWithoutSales === 1 ? "decaindo" : "lucrativo";
     return { decision: "MONITORAR", monitorarReason: reason, pausarReason: null };
   }
   return { decision: "PAUSAR", monitorarReason: null, pausarReason: "prejuizo" };
 }
 
-// Desempenho score — regra 7-3-G:
-// ROAS >= 2 sempre bom (modelo x1, vendedor faz upsell no WhatsApp)
-// Limiar de consistência em 3 dias (1-2 dias ruins fazem parte do game)
+// Desempenho score — regra de corte por dias sem venda:
+// 3+ dias = corte sempre; 2 dias = corte se ROAS < 3.5 (ROAS alto ganha 1 dia extra)
+// CPA cresce a cada dia parado → criativo "sobrevivendo", prestes a morrer
 function computePredictability(
   roas: number,
   _cpa: number,
   daysWithoutSales: number,
   totalSales: number
 ): { score: number; label: "EXCELENTE" | "BOM" | "RUIM" } {
-  // Sem vendas ainda → RUIM
   if (totalSales === 0) return { score: 0, label: "RUIM" };
+
+  // Casos de corte direto → RUIM (mesmo com ROAS alto)
+  const isCut = daysWithoutSales >= 3 || (daysWithoutSales >= 2 && roas < 3.5);
+  if (isCut) {
+    const partialRoas = roas >= 2 ? 50 : roas >= 1.5 ? 30 : roas >= 1 ? 15 : 0;
+    return { score: Math.min(partialRoas, 30), label: "RUIM" };
+  }
 
   // ROAS component (0–60 pts) — principal driver no modelo x1
   let roasScore = 0;
-  if (roas >= 3) roasScore = 60;
+  if (roas >= 3.5) roasScore = 60;
+  else if (roas >= 3) roasScore = 55;
   else if (roas >= 2) roasScore = 50;
   else if (roas >= 1.5) roasScore = 30;
   else if (roas >= 1) roasScore = 15;
-  else roasScore = 0;
 
-  // Consistência (0–40 pts) — regra dos 3 dias, 1-2 dias sem venda = normal
+  // Consistência (0–40 pts)
+  // 2 dias sem venda com ROAS >= 3.5: tolerado mas sinal de alerta (max 8 pts → fica em BOM)
   let consistencyScore = 0;
   if (daysWithoutSales === 0) consistencyScore = 40;
-  else if (daysWithoutSales === 1) consistencyScore = 35;
-  else if (daysWithoutSales === 2) consistencyScore = 20;
-  else consistencyScore = 0; // 3+ dias = sinal de alerta
+  else if (daysWithoutSales === 1) consistencyScore = 30;
+  else if (daysWithoutSales === 2) consistencyScore = 8; // só chegou aqui se ROAS >= 3.5
 
   const score = Math.min(100, roasScore + consistencyScore);
 
-  // ROAS < 1 = prejuízo, sempre RUIM independente de consistência
-  if (roas < 1) return { score: Math.min(score, 25), label: "RUIM" };
+  // ROAS < 1 = prejuízo, sempre RUIM
+  if (roas < 1) return { score: Math.min(score, 20), label: "RUIM" };
 
   const label = score >= 70 ? "EXCELENTE" : score >= 40 ? "BOM" : "RUIM";
   return { score, label };
