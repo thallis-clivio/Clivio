@@ -36,7 +36,7 @@ export default function Landing() {
           </h2>
 
           <p className="text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-            Monitore ROAS, CPA e comissões de afiliado em um único painel. O motor de decisão classifica automaticamente cada criativo: Escalar, Monitorar ou Pausar.
+            Monitore ROAS, CPA e comissões de afiliado em um único painel. O motor de decisão classifica automaticamente cada criativo em 5 estados: Escalar, Lucrativo, Atenção, Monitorar ou Pausar.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -62,7 +62,7 @@ export default function Landing() {
             </div>
             <h3 className="font-semibold text-sm">Motor de decisão</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              ESCALAR, MONITORAR ou PAUSAR — decisão automática baseada em ROAS e dias sem vendas.
+              5 estados — ESCALAR, LUCRATIVO, ATENÇÃO, MONITORAR ou PAUSAR — decisão automática baseada em ROAS e dias sem vendas.
             </p>
           </div>
 
