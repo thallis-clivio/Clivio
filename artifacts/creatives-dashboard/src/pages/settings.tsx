@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { useUser, useAuth } from "@clerk/react";
+import {
+  useGetProductSettings, useUpdateProductSettings, getGetProductSettingsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,6 +75,7 @@ const DEFAULT_RATES: Rates = Object.fromEntries(
 export default function Settings() {
   const { user } = useUser();
   const { getToken } = useAuth();
+  const queryClient = useQueryClient();
 
   const origin = window.location.origin;
   const webhookUrl = `${origin}/api/webhooks/payt`;
@@ -82,45 +87,30 @@ export default function Settings() {
   const [urlSaved, setUrlSaved] = useState(false);
 
   const [mainProductName, setMainProductName] = useState("");
-  const [productLoading, setProductLoading] = useState(true);
-  const [productSaving, setProductSaving] = useState(false);
   const [productSaved, setProductSaved] = useState(false);
 
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      try {
-        const token = await getToken();
-        const res = await fetch(`${import.meta.env.BASE_URL}api/settings/products`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setMainProductName(data.mainProductName ?? "");
-        }
-      } catch { /* keep empty */ } finally {
-        setProductLoading(false);
-      }
-    })();
-  }, [user, getToken]);
+  const { data: productSettings, isLoading: productLoading } = useGetProductSettings({
+    query: { queryKey: getGetProductSettingsQueryKey(), enabled: !!user },
+  });
 
-  const handleSaveProduct = async () => {
-    setProductSaving(true);
-    setProductSaved(false);
-    try {
-      const token = await getToken();
-      const res = await fetch(`${import.meta.env.BASE_URL}api/settings/products`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ mainProductName }),
-      });
-      if (res.ok) {
+  useEffect(() => {
+    if (productSettings?.mainProductName !== undefined) {
+      setMainProductName(productSettings.mainProductName ?? "");
+    }
+  }, [productSettings]);
+
+  const updateProductSettings = useUpdateProductSettings({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getGetProductSettingsQueryKey() });
         setProductSaved(true);
         setTimeout(() => setProductSaved(false), 3000);
-      }
-    } finally {
-      setProductSaving(false);
-    }
+      },
+    },
+  });
+
+  const handleSaveProduct = () => {
+    updateProductSettings.mutate({ data: { mainProductName } });
   };
 
   function handleSaveUrl() {
@@ -231,8 +221,8 @@ export default function Settings() {
                       onChange={e => { setMainProductName(e.target.value); setProductSaved(false); }}
                       className="bg-muted/30 border-border focus:border-primary"
                     />
-                    <Button onClick={handleSaveProduct} disabled={productSaving} size="sm" className="shrink-0 gap-1.5">
-                      {productSaving
+                    <Button onClick={handleSaveProduct} disabled={updateProductSettings.isPending} size="sm" className="shrink-0 gap-1.5">
+                      {updateProductSettings.isPending
                         ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
                         : productSaved
                           ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> Salvo!</>
