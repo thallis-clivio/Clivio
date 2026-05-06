@@ -120,11 +120,11 @@ router.post("/seed-demo", requireAuth, async (req, res) => {
   await db.update(creativesTable).set({ lastSaleAt: sql`NOW() - INTERVAL '2 days'` }).where(sql`id = ${c7.id}`);
   await db.update(creativesTable).set({ lastSaleAt: sql`NOW() - INTERVAL '3 days'` }).where(sql`id = ${c8.id}`);
 
-  // LTV para criativos 1 e 2
-  // c1: 3×9m LTV = 3×376.38 = 1129.14
-  await db.update(creativesTable).set({ ltvCommission: 1129.14 }).where(sql`id = ${c1.id}`);
-  // c2: 2×16m LTV = 2×562.38 = 1124.76
-  await db.update(creativesTable).set({ ltvCommission: 1124.76 }).where(sql`id = ${c2.id}`);
+  // LTV real para criativos 1 e 2 (cross-sell)
+  // c1: 2×Rosa do Sono 5m = 2×254.38 = 508.76
+  await db.update(creativesTable).set({ ltvCommission: 508.76 }).where(sql`id = ${c1.id}`);
+  // c2: 1×GlowEssence Sérum 12m = 432.30
+  await db.update(creativesTable).set({ ltvCommission: 432.30 }).where(sql`id = ${c2.id}`);
 
   req.log.info({ userId }, "seed-demo executed");
   res.json({ ok: true, count: DEMO_NAMES.length });

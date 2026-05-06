@@ -24,16 +24,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function getDecisionColor(decision: string, monitorarReason?: string | null) {
+function getDecisionColor(decision: string, _monitorarReason?: string | null) {
   switch (decision) {
-    case "ESCALAR": return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
+    case "ESCALAR":   return "bg-green-500/20 text-green-400 hover:bg-green-500/30";
     case "LUCRATIVO": return "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30";
-    case "MONITORAR":
-      return monitorarReason === "decaindo"
-        ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
-        : "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
-    case "ATENCAO": return "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30";
-    case "PAUSAR": return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
+    case "MONITORAR": return "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
+    case "ATENCAO":   return "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30";
+    case "PAUSAR":    return "bg-red-500/20 text-red-400 hover:bg-red-500/30";
     default: return "bg-gray-500/20 text-gray-500";
   }
 }
@@ -269,7 +266,6 @@ export default function Criativos() {
                   <SortableHead col="totalSales" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHead col="daysWithoutSales" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <TableHead>Decisão</TableHead>
-                  <TableHead>Previsibilidade</TableHead>
                   <TableHead></TableHead>
                 </TableRow>
               </TableHeader>
@@ -277,12 +273,12 @@ export default function Criativos() {
                 {isLoading ? (
                   [1, 2, 3].map(i => (
                     <TableRow key={i} className="border-border">
-                      {[...Array(10)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
+                      {[...Array(9)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
                     </TableRow>
                   ))
                 ) : creatives?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} className="py-16">
+                    <TableCell colSpan={9} className="py-16">
                       <div className="flex flex-col items-center gap-4 text-center">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                           <Activity className="w-6 h-6 text-muted-foreground" />
@@ -356,7 +352,7 @@ export default function Criativos() {
                             </span>
                           )}
                           {creative.decision === "MONITORAR" && (
-                            <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-yellow-400">
                               {creative.monitorarReason === "decaindo"
                                 ? <TrendingDown className="w-2.5 h-2.5" />
                                 : <Activity className="w-2.5 h-2.5" />
@@ -365,7 +361,7 @@ export default function Criativos() {
                             </span>
                           )}
                           {creative.decision === "ATENCAO" && (
-                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-400">
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-orange-400">
                               <Activity className="w-2.5 h-2.5" />
                               Margem baixa
                             </span>
@@ -380,11 +376,6 @@ export default function Criativos() {
                             </span>
                           )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`text-xs border ${getPredictabilityColor(creative.predictabilityLabel)}`}>
-                          {getPredictabilityShort(creative.predictabilityLabel)}
-                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center">

@@ -130,9 +130,9 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
             <span className="text-xl font-bold tabular-nums text-green-400">{data.decisions.ESCALAR}</span>
             <span className="text-[9px] text-green-600 font-semibold mt-0.5 leading-tight text-center">ESCALAR</span>
           </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-            <span className="text-xl font-bold tabular-nums text-emerald-400">{data.decisions.LUCRATIVO}</span>
-            <span className="text-[9px] text-emerald-600 font-semibold mt-0.5 leading-tight text-center">LUCRAT.</span>
+          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+            <span className="text-xl font-bold tabular-nums text-blue-400">{data.decisions.LUCRATIVO}</span>
+            <span className="text-[9px] text-blue-600 font-semibold mt-0.5 leading-tight text-center">LUCRAT.</span>
           </div>
           <div className="flex flex-col items-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
             <span className="text-xl font-bold tabular-nums text-yellow-400">{data.decisions.MONITORAR}</span>
@@ -154,7 +154,7 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
 
 const DECISION_CONFIG = [
   { key: "ESCALAR",   label: "Escalar",   colorBg: "bg-green-500/10",   colorBorder: "border-green-500/20",   colorText: "text-green-400",   colorLabel: "text-green-600"   },
-  { key: "LUCRATIVO", label: "Lucrativo", colorBg: "bg-emerald-500/10", colorBorder: "border-emerald-500/20", colorText: "text-emerald-400", colorLabel: "text-emerald-600" },
+  { key: "LUCRATIVO", label: "Lucrativo", colorBg: "bg-blue-500/10",    colorBorder: "border-blue-500/20",    colorText: "text-blue-400",    colorLabel: "text-blue-600"    },
   { key: "MONITORAR", label: "Monitorar", colorBg: "bg-yellow-500/10",  colorBorder: "border-yellow-500/20",  colorText: "text-yellow-400",  colorLabel: "text-yellow-600"  },
   { key: "ATENCAO",   label: "Atenção",   colorBg: "bg-orange-500/10",  colorBorder: "border-orange-500/20",  colorText: "text-orange-400",  colorLabel: "text-orange-600"  },
   { key: "PAUSAR",    label: "Pausar",    colorBg: "bg-red-500/10",     colorBorder: "border-red-500/20",     colorText: "text-red-400",     colorLabel: "text-red-600"     },
@@ -201,7 +201,7 @@ function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown
               if (pct === 0) return null;
               const barColor = {
                 ESCALAR:   "bg-green-500",
-                LUCRATIVO: "bg-emerald-500",
+                LUCRATIVO: "bg-blue-500",
                 MONITORAR: "bg-yellow-500",
                 ATENCAO:   "bg-orange-500",
                 PAUSAR:    "bg-red-500",

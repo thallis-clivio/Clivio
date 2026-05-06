@@ -28,26 +28,15 @@ interface Creative {
   predictabilityScore: number;
 }
 
-function AlertCard({ creative, urgency }: { creative: Creative; urgency: "critical" | "warning" | "success" }) {
+type AlertUrgency = "critical" | "warning" | "monitor" | "info" | "success";
+
+function AlertCard({ creative, urgency }: { creative: Creative; urgency: AlertUrgency }) {
   const colorMap = {
-    critical: {
-      border: "border-red-500/30",
-      bg: "bg-red-500/5",
-      icon: "text-red-400",
-      iconBg: "bg-red-500/15",
-    },
-    warning: {
-      border: "border-orange-500/30",
-      bg: "bg-orange-500/5",
-      icon: "text-orange-400",
-      iconBg: "bg-orange-500/15",
-    },
-    success: {
-      border: "border-green-500/30",
-      bg: "bg-green-500/5",
-      icon: "text-green-400",
-      iconBg: "bg-green-500/15",
-    },
+    critical: { border: "border-red-500/30",    bg: "bg-red-500/5",    icon: "text-red-400",    iconBg: "bg-red-500/15"    },
+    warning:  { border: "border-orange-500/30", bg: "bg-orange-500/5", icon: "text-orange-400", iconBg: "bg-orange-500/15" },
+    monitor:  { border: "border-yellow-500/30", bg: "bg-yellow-500/5", icon: "text-yellow-400", iconBg: "bg-yellow-500/15" },
+    info:     { border: "border-blue-500/30",   bg: "bg-blue-500/5",   icon: "text-blue-400",   iconBg: "bg-blue-500/15"   },
+    success:  { border: "border-green-500/30",  bg: "bg-green-500/5",  icon: "text-green-400",  iconBg: "bg-green-500/15"  },
   }[urgency];
 
   function getAlertIcon() {
@@ -85,7 +74,9 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: "critic
             variant="outline"
             className={`text-xs shrink-0 ${
               urgency === "critical" ? "bg-red-500/20 text-red-400 border-red-500/30" :
-              urgency === "warning" ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
+              urgency === "warning"  ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
+              urgency === "monitor"  ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
+              urgency === "info"     ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
               "bg-green-500/20 text-green-400 border-green-500/30"
             }`}
           >
@@ -129,11 +120,19 @@ function AlertSection({
   description: string;
   icon: React.ReactNode;
   creatives: Creative[];
-  urgency: "critical" | "warning" | "success";
+  urgency: AlertUrgency;
   emptyText: string;
 }) {
-  const headerColor = urgency === "critical" ? "text-red-400" : urgency === "warning" ? "text-orange-400" : "text-green-400";
-  const countBg = urgency === "critical" ? "bg-red-500/20 text-red-400" : urgency === "warning" ? "bg-orange-500/20 text-orange-400" : "bg-green-500/20 text-green-400";
+  const headerColor =
+    urgency === "critical" ? "text-red-400"    :
+    urgency === "warning"  ? "text-orange-400" :
+    urgency === "monitor"  ? "text-yellow-400" :
+    urgency === "info"     ? "text-blue-400"   : "text-green-400";
+  const countBg =
+    urgency === "critical" ? "bg-red-500/20 text-red-400"       :
+    urgency === "warning"  ? "bg-orange-500/20 text-orange-400" :
+    urgency === "monitor"  ? "bg-yellow-500/20 text-yellow-400" :
+    urgency === "info"     ? "bg-blue-500/20 text-blue-400"     : "bg-green-500/20 text-green-400";
 
   return (
     <Card className="border-border/50 bg-card/50">
@@ -301,7 +300,7 @@ export default function Alertas() {
               description="Com dias sem venda. Próximos 1–2 dias determinam se serão cortados."
               icon={<TrendingDown className="w-5 h-5" />}
               creatives={monitorarDecaindo}
-              urgency="warning"
+              urgency="monitor"
               emptyText="Nenhum criativo em decaimento detectado."
             />
 
@@ -331,7 +330,7 @@ export default function Alertas() {
                 description="ROAS ≥ 2.0 com vendas hoje. Manter investimento e acompanhar."
                 icon={<CheckCircle className="w-5 h-5" />}
                 creatives={lucrativo}
-                urgency="success"
+                urgency="info"
                 emptyText=""
               />
             )}
@@ -342,7 +341,7 @@ export default function Alertas() {
                 description="ROAS ≥ 3 com 1 dia sem venda. Provavelmente vai se recuperar — acompanhe."
                 icon={<Activity className="w-5 h-5" />}
                 creatives={monitorarLucrativo}
-                urgency="warning"
+                urgency="monitor"
                 emptyText=""
               />
             )}
