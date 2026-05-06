@@ -19,7 +19,7 @@ export const HealthCheckResponse = zod.object({
  * @summary List all creatives
  */
 export const ListCreativesQueryParams = zod.object({
-  decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]).optional(),
+  decision: zod.enum(["ESCALAR", "PAUSAR"]).optional(),
   sortBy: zod
     .enum(["roas", "spend", "commission", "name", "cpa", "totalSales"])
     .optional(),
@@ -54,7 +54,7 @@ export const ListCreativesResponseItem = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "PAUSAR"]),
     }),
   );
 export const ListCreativesResponse = zod.array(ListCreativesResponseItem);
@@ -110,7 +110,7 @@ export const GetCreativeResponse = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "PAUSAR"]),
     }),
   );
 
@@ -162,7 +162,7 @@ export const UpdateCreativeResponse = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "PAUSAR"]),
     }),
   );
 
@@ -259,7 +259,7 @@ export const GetDashboardSummaryResponse = zod.object({
           "MÉDIA PREVISIBILIDADE",
           "BAIXA PREVISIBILIDADE",
         ]),
-        decision: zod.enum(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"]),
+        decision: zod.enum(["ESCALAR", "PAUSAR"]),
       }),
     )
     .optional(),
@@ -274,9 +274,44 @@ export const GetDecisionBreakdownQueryParams = zod.object({
 
 export const GetDecisionBreakdownResponse = zod.object({
   ESCALAR: zod.number(),
-  MONITORAR: zod.number(),
-  OTIMIZAR: zod.number(),
   PAUSAR: zod.number(),
+});
+
+/**
+ * @summary Get performance highlights — best ROAS, worst CPA, most sales, decision counts
+ */
+export const GetPerformanceSummaryQueryParams = zod.object({
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+});
+
+export const GetPerformanceSummaryResponse = zod.object({
+  bestRoas: zod
+    .object({
+      name: zod.string(),
+      roas: zod.number(),
+      commission: zod.number(),
+    })
+    .nullish(),
+  worstCpa: zod
+    .object({
+      name: zod.string(),
+      cpa: zod.number(),
+      spend: zod.number(),
+      totalSales: zod.number(),
+    })
+    .nullish(),
+  mostSales: zod
+    .object({
+      name: zod.string(),
+      totalSales: zod.number(),
+      roas: zod.number(),
+    })
+    .nullish(),
+  decisions: zod.object({
+    ESCALAR: zod.number(),
+    PAUSAR: zod.number(),
+  }),
+  totalCreatives: zod.number(),
 });
 
 /**
@@ -297,3 +332,23 @@ export const GetDashboardChartsResponseItem = zod.object({
 export const GetDashboardChartsResponse = zod.array(
   GetDashboardChartsResponseItem,
 );
+
+/**
+ * @summary Receive Payt sale postback and update creative sales
+ */
+export const HandlePaytWebhookBody = zod.object({
+  integration_key: zod.string().optional(),
+  transaction_id: zod.string().optional(),
+  status: zod.string(),
+  type: zod.string().optional(),
+  test: zod.boolean().optional(),
+  utm_content: zod.string().optional(),
+});
+
+export const HandlePaytWebhookResponse = zod.object({
+  ok: zod.boolean(),
+  reason: zod.string().optional(),
+  creativeId: zod.number().optional(),
+  planField: zod.string().optional(),
+  delta: zod.number().optional(),
+});

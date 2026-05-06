@@ -14,6 +14,8 @@ tags:
     description: Creative performance management
   - name: dashboard
     description: Dashboard summary data
+  - name: webhooks
+    description: Inbound webhook receivers
 paths:
   /healthz:
     get:
@@ -40,7 +42,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ESCALAR, MONITORAR, OTIMIZAR, PAUSAR]
+            enum: [ESCALAR, PAUSAR]
         - name: sortBy
           in: query
           required: false
@@ -263,6 +265,26 @@ paths:
               schema:
                 $ref: "#/components/schemas/DecisionBreakdown"
 
+  /dashboard/performance-summary:
+    get:
+      operationId: getPerformanceSummary
+      tags: [dashboard]
+      summary: Get performance highlights — best ROAS, worst CPA, most sales, decision counts
+      parameters:
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
+      responses:
+        "200":
+          description: Performance summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerformanceSummary"
+
   /dashboard/charts:
     get:
       operationId: getDashboardCharts
@@ -284,6 +306,25 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/ChartDataPoint"
+
+  /webhooks/payt:
+    post:
+      operationId: handlePaytWebhook
+      tags: [webhooks]
+      summary: Receive Payt sale postback and update creative sales
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaytWebhookPayload"
+      responses:
+        "200":
+          description: Always returns 200
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResponse"
 
 components:
   schemas:
@@ -363,7 +404,7 @@ components:
               enum: [ALTA PREVISIBILIDADE, MÉDIA PREVISIBILIDADE, BAIXA PREVISIBILIDADE]
             decision:
               type: string
-              enum: [ESCALAR, MONITORAR, OTIMIZAR, PAUSAR]
+              enum: [ESCALAR, PAUSAR]
           required:
             - id
             - commission
@@ -404,17 +445,63 @@ components:
       properties:
         ESCALAR:
           type: integer
-        MONITORAR:
-          type: integer
-        OTIMIZAR:
-          type: integer
         PAUSAR:
           type: integer
       required:
         - ESCALAR
-        - MONITORAR
-        - OTIMIZAR
         - PAUSAR
+
+    PerformanceSummary:
+      type: object
+      properties:
+        bestRoas:
+          type: object
+          nullable: true
+          properties:
+            name:
+              type: string
+            roas:
+              type: number
+            commission:
+              type: number
+          required: [name, roas, commission]
+        worstCpa:
+          type: object
+          nullable: true
+          properties:
+            name:
+              type: string
+            cpa:
+              type: number
+            spend:
+              type: number
+            totalSales:
+              type: integer
+          required: [name, cpa, spend, totalSales]
+        mostSales:
+          type: object
+          nullable: true
+          properties:
+            name:
+              type: string
+            totalSales:
+              type: integer
+            roas:
+              type: number
+          required: [name, totalSales, roas]
+        decisions:
+          type: object
+          properties:
+            ESCALAR:
+              type: integer
+            PAUSAR:
+              type: integer
+          required: [ESCALAR, PAUSAR]
+        totalCreatives:
+          type: integer
+      required:
+        - decisions
+        - totalCreatives
 
     ChartDataPoint:
       type: object
@@ -475,3 +562,37 @@ components:
         - explanation
         - nextAction
         - metrics
+
+    PaytWebhookPayload:
+      type: object
+      properties:
+        integration_key:
+          type: string
+        transaction_id:
+          type: string
+        status:
+          type: string
+        type:
+          type: string
+        test:
+          type: boolean
+        utm_content:
+          type: string
+      required:
+        - status
+
+    WebhookResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        reason:
+          type: string
+        creativeId:
+          type: integer
+        planField:
+          type: string
+        delta:
+          type: integer
+      required:
+        - ok

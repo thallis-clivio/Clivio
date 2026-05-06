@@ -39,11 +39,9 @@ function computeTotalSales(c: {
   return c.sales5m + c.sales7m + c.sales9m + c.sales12m + c.sales16m + c.sales20m;
 }
 
-function computeDecision(roas: number, cpa: number, daysWithoutSales: number): "ESCALAR" | "MONITORAR" | "OTIMIZAR" | "PAUSAR" {
+function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): "ESCALAR" | "PAUSAR" {
   if (daysWithoutSales >= 2) return "PAUSAR";
   if (roas >= 2) return "ESCALAR";
-  // ROAS < 2: use CPA as tiebreaker
-  if (cpa <= 100) return "OTIMIZAR";
   return "PAUSAR";
 }
 
@@ -298,15 +296,8 @@ router.post("/creatives/:id/analyze", async (req, res) => {
       explanation = `"${row.name}" está com desempenho excepcional — ROAS de ${roas.toFixed(2)}x com ${totalSales} venda(s) geradas. A comissão de R$${commission.toFixed(0)} sobre um gasto de R$${spend.toFixed(0)} demonstra alta lucratividade. ${cpaText} ${prevText}`;
       nextAction = `Aumente o orçamento em 20–30% e monitore as próximas 48 horas. Considere duplicar este criativo para novos públicos enquanto o original continua escalando.`;
       break;
-    case "MONITORAR":
-      explanation = `"${row.name}" apresenta retorno de ${roas.toFixed(2)}x, ainda abaixo do limite de escala de 2,0x. ${totalSales} venda(s) registrada(s). ${cpaText} ${prevText}`;
-      nextAction = `Mantenha o orçamento atual. Teste novos hooks ou CTAs para elevar o ROAS acima de 2,0x. Reavalie em 24 a 48 horas.`;
-      break;
-    case "OTIMIZAR":
-      explanation = `"${row.name}" está no ponto de equilíbrio com ROAS de ${roas.toFixed(2)}x. ${totalSales} venda(s) registrada(s). ${cpaText} ${daysWithoutSales > 0 ? `${daysWithoutSales} dia(s) sem vendas — sinal de atenção.` : ""} ${prevText}`;
-      nextAction = `Reduza o orçamento em 30–50% imediatamente. Teste novo hook, formato ou segmento. Se não houver melhora em 72 horas, pause.`;
-      break;
     case "PAUSAR":
+    default:
       if (daysWithoutSales >= 2) {
         explanation = `"${row.name}" foi pausado por ${daysWithoutSales} dias consecutivos sem vendas — regra automática de parada. ${prevText}`;
         nextAction = `Pause imediatamente. Analise os últimos públicos que converteram. Reformule o criativo com novo hook e relance para lookalike frio.`;

@@ -4,7 +4,7 @@ import {
   useDeleteCreative, useAnalyzeCreative,
   useGetCreativeChart, getGetCreativeChartQueryKey,
   getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
-  getGetDecisionBreakdownQueryKey, getGetDashboardChartsQueryKey,
+  getGetPerformanceSummaryQueryKey, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
@@ -36,8 +36,6 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
 function getDecisionColor(decision: string) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 border-green-500/30";
-    case "MONITORAR": return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
-    case "OTIMIZAR": return "bg-orange-500/20 text-orange-500 border-orange-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 border-red-500/30";
     default: return "bg-gray-500/20 text-gray-500 border-gray-500/30";
   }
@@ -85,7 +83,7 @@ export default function CreativeDetail() {
   function invalidateAll() {
     queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-    queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetPerformanceSummaryQueryKey() });
     queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
   }
 

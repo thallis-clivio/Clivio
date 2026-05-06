@@ -3,12 +3,13 @@ import { Link } from "wouter";
 import {
   useListCreatives, getListCreativesQueryKey,
   useGetDashboardSummary, getGetDashboardSummaryQueryKey,
-  useGetDecisionBreakdown, getGetDecisionBreakdownQueryKey,
+  useGetPerformanceSummary, getGetPerformanceSummaryQueryKey,
   useGetDashboardCharts, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
 import {
   ListCreativesParams, CreativeWithMetricsDecision,
   ListCreativesSortBy, ListCreativesSortOrder,
+  PerformanceSummary,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +22,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, ShoppingCart } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,8 +32,6 @@ type DateFilter = "all" | "daily" | "weekly" | "monthly";
 function getDecisionColor(decision: string) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
-    case "MONITORAR": return "bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30";
-    case "OTIMIZAR": return "bg-orange-500/20 text-orange-500 hover:bg-orange-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
     default: return "bg-gray-500/20 text-gray-500";
   }
@@ -64,6 +63,107 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
   monthly: "Mês",
 };
 
+function StatRow({ icon, label, name, main, sub, colorBg, colorText }: {
+  icon: React.ReactNode;
+  label: string;
+  name: string;
+  main: string;
+  sub: string;
+  colorBg: string;
+  colorText: string;
+}) {
+  return (
+    <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-border hover:bg-muted/50 transition-colors">
+      <div className={`mt-0.5 w-8 h-8 rounded-md flex items-center justify-center shrink-0 ${colorBg}`}>
+        <span className={colorText}>{icon}</span>
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{label}</div>
+        <div className="text-sm font-semibold text-foreground truncate">{name}</div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className={`text-base font-bold font-mono leading-none ${colorText}`}>{main}</span>
+          <span className="text-xs text-muted-foreground">{sub}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummary; isLoading: boolean }) {
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+        <div className="grid grid-cols-2 gap-2 pt-2">
+          {[1, 2].map(i => <Skeleton key={i} className="h-14 w-full" />)}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.totalCreatives === 0) {
+    return (
+      <div className="flex items-center justify-center h-32 text-muted-foreground text-sm">
+        Nenhum criativo no período.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {data.bestRoas && (
+        <StatRow
+          icon={<TrendingUp className="w-4 h-4" />}
+          label="Melhor ROAS"
+          name={data.bestRoas.name}
+          main={`${data.bestRoas.roas.toFixed(2)}x`}
+          sub={`comissão ${formatCurrency(data.bestRoas.commission)}`}
+          colorBg="bg-green-500/20"
+          colorText="text-green-400"
+        />
+      )}
+      {data.worstCpa && (
+        <StatRow
+          icon={<TrendingDown className="w-4 h-4" />}
+          label="Pior CPA"
+          name={data.worstCpa.name}
+          main={formatCurrency(data.worstCpa.cpa)}
+          sub={`${data.worstCpa.totalSales} vendas · gasto ${formatCurrency(data.worstCpa.spend)}`}
+          colorBg="bg-red-500/20"
+          colorText="text-red-400"
+        />
+      )}
+      {data.mostSales && (
+        <StatRow
+          icon={<ShoppingBag className="w-4 h-4" />}
+          label="Mais Vendas"
+          name={data.mostSales.name}
+          main={`${data.mostSales.totalSales} vendas`}
+          sub={`ROAS ${data.mostSales.roas.toFixed(2)}x`}
+          colorBg="bg-blue-500/20"
+          colorText="text-blue-400"
+        />
+      )}
+
+      <div className="pt-1 border-t border-border mt-3">
+        <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 mt-2">
+          Situação dos Criativos
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="flex flex-col items-center p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
+            <span className="text-2xl font-bold font-mono text-green-400">{data.decisions.ESCALAR}</span>
+            <span className="text-[10px] text-green-600 font-semibold mt-0.5">ESCALAR</span>
+          </div>
+          <div className="flex flex-col items-center p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
+            <span className="text-2xl font-bold font-mono text-red-400">{data.decisions.PAUSAR}</span>
+            <span className="text-[10px] text-red-600 font-semibold mt-0.5">PAUSAR</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
@@ -85,8 +185,8 @@ export default function Home() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary(dashParams, {
     query: { queryKey: getGetDashboardSummaryQueryKey(dashParams) }
   });
-  const { data: breakdown, isLoading: isBreakdownLoading } = useGetDecisionBreakdown(dashParams, {
-    query: { queryKey: getGetDecisionBreakdownQueryKey(dashParams) }
+  const { data: performanceSummary, isLoading: isPerformanceLoading } = useGetPerformanceSummary(dashParams, {
+    query: { queryKey: getGetPerformanceSummaryQueryKey(dashParams) }
   });
   const { data: chartData, isLoading: isChartLoading } = useGetDashboardCharts(dashParams, {
     query: { queryKey: getGetDashboardChartsQueryKey(dashParams) }
@@ -202,7 +302,7 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Chart + Decision Breakdown */}
+        {/* Chart + Performance Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 border-border/50 bg-card/50">
             <CardHeader className="pb-2">
@@ -243,32 +343,10 @@ export default function Home() {
 
           <Card className="border-border/50 bg-card/50">
             <CardHeader>
-              <CardTitle>Distribuição de Decisões</CardTitle>
+              <CardTitle className="text-base">Resumo de Performance</CardTitle>
             </CardHeader>
             <CardContent>
-              {isBreakdownLoading ? (
-                <div className="space-y-3">{[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
-              ) : (
-                <div className="space-y-3">
-                  {(["ESCALAR", "MONITORAR", "OTIMIZAR", "PAUSAR"] as const).map(d => {
-                    const colors = {
-                      ESCALAR: { bg: "bg-green-500/10", border: "border-green-500/20", text: "text-green-500", dot: "bg-green-500" },
-                      MONITORAR: { bg: "bg-yellow-500/10", border: "border-yellow-500/20", text: "text-yellow-500", dot: "bg-yellow-500" },
-                      OTIMIZAR: { bg: "bg-orange-500/10", border: "border-orange-500/20", text: "text-orange-500", dot: "bg-orange-500" },
-                      PAUSAR: { bg: "bg-red-500/10", border: "border-red-500/20", text: "text-red-500", dot: "bg-red-500" },
-                    }[d];
-                    return (
-                      <div key={d} className={`flex items-center justify-between p-3 rounded-lg ${colors.bg} border ${colors.border}`}>
-                        <div className="flex items-center gap-2">
-                          <div className={`w-2.5 h-2.5 rounded-full ${colors.dot}`} />
-                          <span className={`font-medium text-sm ${colors.text}`}>{d}</span>
-                        </div>
-                        <span className="text-base font-bold" data-testid={`count-${d.toLowerCase()}`}>{breakdown?.[d] ?? 0}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              <PerformanceSummaryPanel data={performanceSummary} isLoading={isPerformanceLoading} />
             </CardContent>
           </Card>
         </div>
@@ -285,8 +363,6 @@ export default function Home() {
                 <SelectContent>
                   <SelectItem value="ALL">Todas as Decisões</SelectItem>
                   <SelectItem value="ESCALAR">Escalar</SelectItem>
-                  <SelectItem value="MONITORAR">Monitorar</SelectItem>
-                  <SelectItem value="OTIMIZAR">Otimizar</SelectItem>
                   <SelectItem value="PAUSAR">Pausar</SelectItem>
                 </SelectContent>
               </Select>

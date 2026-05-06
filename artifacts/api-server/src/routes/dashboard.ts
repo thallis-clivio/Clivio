@@ -44,10 +44,51 @@ router.get("/dashboard/decision-breakdown", async (req, res) => {
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
   const results = filtered.map(withMetrics);
 
-  const breakdown = { ESCALAR: 0, MONITORAR: 0, OTIMIZAR: 0, PAUSAR: 0 };
+  const breakdown = { ESCALAR: 0, PAUSAR: 0 };
   for (const c of results) breakdown[c.decision]++;
 
   res.json(breakdown);
+});
+
+// GET /dashboard/performance-summary
+router.get("/dashboard/performance-summary", async (req, res) => {
+  const dateFilter = req.query.dateFilter as string | undefined;
+  const rows = await db.select().from(creativesTable);
+
+  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
+
+  if (filtered.length === 0) {
+    res.json({
+      bestRoas: null,
+      worstCpa: null,
+      mostSales: null,
+      decisions: { ESCALAR: 0, PAUSAR: 0 },
+      totalCreatives: 0,
+    });
+    return;
+  }
+
+  const results = filtered.map(withMetrics);
+
+  const bestRoasCreative = results.reduce((best, c) => c.roas > best.roas ? c : best);
+  const withSales = results.filter(c => c.totalSales > 0);
+  const worstCpaCreative = withSales.length > 0
+    ? withSales.reduce((worst, c) => c.cpa > worst.cpa ? c : worst)
+    : null;
+  const mostSalesCreative = results.reduce((best, c) => c.totalSales > best.totalSales ? c : best);
+
+  const decisions = { ESCALAR: 0, PAUSAR: 0 };
+  for (const c of results) decisions[c.decision]++;
+
+  res.json({
+    bestRoas: { name: bestRoasCreative.name, roas: bestRoasCreative.roas, commission: bestRoasCreative.commission },
+    worstCpa: worstCpaCreative
+      ? { name: worstCpaCreative.name, cpa: worstCpaCreative.cpa, spend: worstCpaCreative.spend, totalSales: worstCpaCreative.totalSales }
+      : null,
+    mostSales: { name: mostSalesCreative.name, totalSales: mostSalesCreative.totalSales, roas: mostSalesCreative.roas },
+    decisions,
+    totalCreatives: results.length,
+  });
 });
 
 // GET /dashboard/charts
@@ -58,7 +99,6 @@ router.get("/dashboard/charts", async (req, res) => {
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
   const results = filtered.map(withMetrics);
 
-  // Group by date
   const byDate: Record<string, { spend: number; commission: number; totalSales: number; count: number; roasSum: number; cpaSum: number; cpaCount: number }> = {};
 
   for (const c of results) {

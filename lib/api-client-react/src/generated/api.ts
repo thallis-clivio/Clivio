@@ -28,8 +28,12 @@ import type {
   GetDashboardChartsParams,
   GetDashboardSummaryParams,
   GetDecisionBreakdownParams,
+  GetPerformanceSummaryParams,
   HealthStatus,
   ListCreativesParams,
+  PaytWebhookPayload,
+  PerformanceSummary,
+  WebhookResponse,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -953,6 +957,109 @@ export function useGetDecisionBreakdown<
 }
 
 /**
+ * @summary Get performance highlights — best ROAS, worst CPA, most sales, decision counts
+ */
+export const getGetPerformanceSummaryUrl = (
+  params?: GetPerformanceSummaryParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/performance-summary?${stringifiedParams}`
+    : `/api/dashboard/performance-summary`;
+};
+
+export const getPerformanceSummary = async (
+  params?: GetPerformanceSummaryParams,
+  options?: RequestInit,
+): Promise<PerformanceSummary> => {
+  return customFetch<PerformanceSummary>(getGetPerformanceSummaryUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPerformanceSummaryQueryKey = (
+  params?: GetPerformanceSummaryParams,
+) => {
+  return [
+    `/api/dashboard/performance-summary`,
+    ...(params ? [params] : []),
+  ] as const;
+};
+
+export const getGetPerformanceSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPerformanceSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPerformanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPerformanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetPerformanceSummaryQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPerformanceSummary>>
+  > = ({ signal }) =>
+    getPerformanceSummary(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPerformanceSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPerformanceSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPerformanceSummary>>
+>;
+export type GetPerformanceSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get performance highlights — best ROAS, worst CPA, most sales, decision counts
+ */
+
+export function useGetPerformanceSummary<
+  TData = Awaited<ReturnType<typeof getPerformanceSummary>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetPerformanceSummaryParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getPerformanceSummary>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPerformanceSummaryQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get chart data aggregated by date
  */
 export const getGetDashboardChartsUrl = (params?: GetDashboardChartsParams) => {
@@ -1048,3 +1155,89 @@ export function useGetDashboardCharts<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Receive Payt sale postback and update creative sales
+ */
+export const getHandlePaytWebhookUrl = () => {
+  return `/api/webhooks/payt`;
+};
+
+export const handlePaytWebhook = async (
+  paytWebhookPayload: PaytWebhookPayload,
+  options?: RequestInit,
+): Promise<WebhookResponse> => {
+  return customFetch<WebhookResponse>(getHandlePaytWebhookUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(paytWebhookPayload),
+  });
+};
+
+export const getHandlePaytWebhookMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof handlePaytWebhook>>,
+    TError,
+    { data: BodyType<PaytWebhookPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof handlePaytWebhook>>,
+  TError,
+  { data: BodyType<PaytWebhookPayload> },
+  TContext
+> => {
+  const mutationKey = ["handlePaytWebhook"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof handlePaytWebhook>>,
+    { data: BodyType<PaytWebhookPayload> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return handlePaytWebhook(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type HandlePaytWebhookMutationResult = NonNullable<
+  Awaited<ReturnType<typeof handlePaytWebhook>>
+>;
+export type HandlePaytWebhookMutationBody = BodyType<PaytWebhookPayload>;
+export type HandlePaytWebhookMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Receive Payt sale postback and update creative sales
+ */
+export const useHandlePaytWebhook = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof handlePaytWebhook>>,
+    TError,
+    { data: BodyType<PaytWebhookPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof handlePaytWebhook>>,
+  TError,
+  { data: BodyType<PaytWebhookPayload> },
+  TContext
+> => {
+  return useMutation(getHandlePaytWebhookMutationOptions(options));
+};

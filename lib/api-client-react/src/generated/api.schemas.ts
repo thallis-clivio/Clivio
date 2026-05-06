@@ -41,8 +41,6 @@ export type CreativeWithMetricsDecision =
 
 export const CreativeWithMetricsDecision = {
   ESCALAR: "ESCALAR",
-  MONITORAR: "MONITORAR",
-  OTIMIZAR: "OTIMIZAR",
   PAUSAR: "PAUSAR",
 } as const;
 
@@ -69,9 +67,39 @@ export interface DashboardSummary {
 
 export interface DecisionBreakdown {
   ESCALAR: number;
-  MONITORAR: number;
-  OTIMIZAR: number;
   PAUSAR: number;
+}
+
+export type PerformanceSummaryBestRoas = {
+  name: string;
+  roas: number;
+  commission: number;
+} | null;
+
+export type PerformanceSummaryWorstCpa = {
+  name: string;
+  cpa: number;
+  spend: number;
+  totalSales: number;
+} | null;
+
+export type PerformanceSummaryMostSales = {
+  name: string;
+  totalSales: number;
+  roas: number;
+} | null;
+
+export type PerformanceSummaryDecisions = {
+  ESCALAR: number;
+  PAUSAR: number;
+};
+
+export interface PerformanceSummary {
+  bestRoas?: PerformanceSummaryBestRoas;
+  worstCpa?: PerformanceSummaryWorstCpa;
+  mostSales?: PerformanceSummaryMostSales;
+  decisions: PerformanceSummaryDecisions;
+  totalCreatives: number;
 }
 
 export interface ChartDataPoint {
@@ -102,6 +130,23 @@ export interface AnalysisResult {
   metrics: AnalysisResultMetrics;
 }
 
+export interface PaytWebhookPayload {
+  integration_key?: string;
+  transaction_id?: string;
+  status: string;
+  type?: string;
+  test?: boolean;
+  utm_content?: string;
+}
+
+export interface WebhookResponse {
+  ok: boolean;
+  reason?: string;
+  creativeId?: number;
+  planField?: string;
+  delta?: number;
+}
+
 export type ListCreativesParams = {
   decision?: ListCreativesDecision;
   sortBy?: ListCreativesSortBy;
@@ -114,8 +159,6 @@ export type ListCreativesDecision =
 
 export const ListCreativesDecision = {
   ESCALAR: "ESCALAR",
-  MONITORAR: "MONITORAR",
-  OTIMIZAR: "OTIMIZAR",
   PAUSAR: "PAUSAR",
 } as const;
 
@@ -185,6 +228,20 @@ export type GetDecisionBreakdownDateFilter =
   (typeof GetDecisionBreakdownDateFilter)[keyof typeof GetDecisionBreakdownDateFilter];
 
 export const GetDecisionBreakdownDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
+export type GetPerformanceSummaryParams = {
+  dateFilter?: GetPerformanceSummaryDateFilter;
+};
+
+export type GetPerformanceSummaryDateFilter =
+  (typeof GetPerformanceSummaryDateFilter)[keyof typeof GetPerformanceSummaryDateFilter];
+
+export const GetPerformanceSummaryDateFilter = {
   daily: "daily",
   weekly: "weekly",
   monthly: "monthly",
