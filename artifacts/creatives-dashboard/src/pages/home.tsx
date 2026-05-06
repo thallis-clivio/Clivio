@@ -22,7 +22,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, ChevronsUpDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -73,6 +73,42 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
   monthly: "Mês",
 };
 
+const SORTABLE_COLS: { key: ListCreativesSortBy; label: string }[] = [
+  { key: "spend", label: "Gasto" },
+  { key: "commission", label: "Comissão" },
+  { key: "roas", label: "ROAS" },
+  { key: "cpa", label: "CPA" },
+  { key: "totalSales", label: "Vendas" },
+];
+
+function SortableHead({
+  col, sortBy, sortOrder, onSort, className,
+}: {
+  col: ListCreativesSortBy;
+  sortBy: ListCreativesSortBy;
+  sortOrder: ListCreativesSortOrder;
+  onSort: (col: ListCreativesSortBy) => void;
+  className?: string;
+}) {
+  const active = sortBy === col;
+  return (
+    <TableHead
+      className={`cursor-pointer select-none hover:text-foreground transition-colors ${className ?? ""}`}
+      onClick={() => onSort(col)}
+    >
+      <span className="inline-flex items-center gap-1 justify-end w-full">
+        {SORTABLE_COLS.find(c => c.key === col)?.label}
+        {active
+          ? sortOrder === "asc"
+            ? <ArrowUp className="w-3 h-3 text-primary" />
+            : <ArrowDown className="w-3 h-3 text-primary" />
+          : <ChevronsUpDown className="w-3 h-3 opacity-30" />
+        }
+      </span>
+    </TableHead>
+  );
+}
+
 function StatRow({ icon, label, name, main, sub, colorBg, colorText }: {
   icon: React.ReactNode;
   label: string;
@@ -91,7 +127,7 @@ function StatRow({ icon, label, name, main, sub, colorBg, colorText }: {
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-0.5">{label}</div>
         <div className="text-sm font-semibold text-foreground truncate">{name}</div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className={`text-base font-bold font-mono leading-none ${colorText}`}>{main}</span>
+          <span className={`text-base font-bold tabular-nums leading-none ${colorText}`}>{main}</span>
           <span className="text-xs text-muted-foreground">{sub}</span>
         </div>
       </div>
@@ -161,15 +197,15 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
         </div>
         <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
-            <span className="text-2xl font-bold font-mono text-green-400">{data.decisions.ESCALAR}</span>
+            <span className="text-2xl font-bold tabular-nums text-green-400">{data.decisions.ESCALAR}</span>
             <span className="text-[10px] text-green-600 font-semibold mt-0.5">ESCALAR</span>
           </div>
           <div className="flex flex-col items-center p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-            <span className="text-2xl font-bold font-mono text-yellow-400">{data.decisions.MONITORAR}</span>
+            <span className="text-2xl font-bold tabular-nums text-yellow-400">{data.decisions.MONITORAR}</span>
             <span className="text-[10px] text-yellow-600 font-semibold mt-0.5">MONITOR.</span>
           </div>
           <div className="flex flex-col items-center p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
-            <span className="text-2xl font-bold font-mono text-red-400">{data.decisions.PAUSAR}</span>
+            <span className="text-2xl font-bold tabular-nums text-red-400">{data.decisions.PAUSAR}</span>
             <span className="text-[10px] text-red-600 font-semibold mt-0.5">PAUSAR</span>
           </div>
         </div>
@@ -184,6 +220,15 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+
+  function handleSort(col: ListCreativesSortBy) {
+    if (sortBy === col) {
+      setSortOrder(prev => prev === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(col);
+      setSortOrder("desc");
+    }
+  }
 
   const creativeParams: ListCreativesParams = useMemo(() => {
     const p: ListCreativesParams = { sortBy, sortOrder, dateFilter };
@@ -255,7 +300,7 @@ export default function Home() {
           </div>
         </div>
 
-        {/* KPI Cards — 5 cards */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           <Card className="border-border/50 bg-card/50">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -264,7 +309,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               {isSummaryLoading ? <Skeleton className="h-7 w-24" /> : (
-                <div className="text-xl font-bold text-foreground" data-testid="text-total-spend">{formatCurrency(summary?.totalSpend ?? 0)}</div>
+                <div className="text-xl font-bold tabular-nums text-foreground" data-testid="text-total-spend">{formatCurrency(summary?.totalSpend ?? 0)}</div>
               )}
             </CardContent>
           </Card>
@@ -275,7 +320,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               {isSummaryLoading ? <Skeleton className="h-7 w-24" /> : (
-                <div className="text-xl font-bold text-foreground" data-testid="text-total-commission">{formatCurrency(summary?.totalCommission ?? 0)}</div>
+                <div className="text-xl font-bold tabular-nums text-foreground" data-testid="text-total-commission">{formatCurrency(summary?.totalCommission ?? 0)}</div>
               )}
             </CardContent>
           </Card>
@@ -286,7 +331,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               {isSummaryLoading ? <Skeleton className="h-7 w-20" /> : (
-                <div className="text-xl font-bold text-primary" data-testid="text-average-roas">{formatRoas(summary?.averageRoas ?? 0)}</div>
+                <div className="text-xl font-bold tabular-nums text-primary" data-testid="text-average-roas">{formatRoas(summary?.averageRoas ?? 0)}</div>
               )}
             </CardContent>
           </Card>
@@ -297,7 +342,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               {isSummaryLoading ? <Skeleton className="h-7 w-24" /> : (
-                <div className={`text-xl font-bold ${getCpaColor(summary?.averageCpa ?? 0, summary?.totalSales ?? 0)}`} data-testid="text-average-cpa">
+                <div className={`text-xl font-bold tabular-nums ${getCpaColor(summary?.averageCpa ?? 0, summary?.totalSales ?? 0)}`} data-testid="text-average-cpa">
                   {(summary?.totalSales ?? 0) === 0 ? "—" : formatCurrency(summary?.averageCpa ?? 0)}
                 </div>
               )}
@@ -310,7 +355,7 @@ export default function Home() {
             </CardHeader>
             <CardContent>
               {isSummaryLoading ? <Skeleton className="h-7 w-16" /> : (
-                <div className="text-xl font-bold text-foreground" data-testid="text-total-sales">{summary?.totalSales ?? 0}</div>
+                <div className="text-xl font-bold tabular-nums text-foreground" data-testid="text-total-sales">{summary?.totalSales ?? 0}</div>
               )}
             </CardContent>
           </Card>
@@ -369,7 +414,7 @@ export default function Home() {
         <Card className="border-border/50 bg-card/50">
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <CardTitle>Biblioteca de Criativos</CardTitle>
-            <div className="flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-2">
               <Select value={decisionFilter} onValueChange={v => setDecisionFilter(v as any)}>
                 <SelectTrigger className="w-[155px]">
                   <SelectValue placeholder="Decisão" />
@@ -381,34 +426,31 @@ export default function Home() {
                   <SelectItem value="PAUSAR">Pausar</SelectItem>
                 </SelectContent>
               </Select>
-              <Select value={sortBy} onValueChange={v => setSortBy(v as any)}>
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="roas">ROAS</SelectItem>
-                  <SelectItem value="cpa">CPA</SelectItem>
-                  <SelectItem value="spend">Gasto</SelectItem>
-                  <SelectItem value="commission">Comissão</SelectItem>
-                  <SelectItem value="totalSales">Vendas</SelectItem>
-                  <SelectItem value="name">Nome</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" size="icon" onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")} data-testid="button-toggle-sort">
-                {sortOrder === "asc" ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
-              </Button>
             </div>
           </CardHeader>
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow className="border-border hover:bg-transparent">
-                  <TableHead>Criativo</TableHead>
-                  <TableHead className="text-right">Gasto</TableHead>
-                  <TableHead className="text-right">Comissão</TableHead>
-                  <TableHead className="text-right">ROAS</TableHead>
-                  <TableHead className="text-right">CPA</TableHead>
-                  <TableHead className="text-right">Vendas</TableHead>
+                  <TableHead
+                    className="cursor-pointer select-none hover:text-foreground transition-colors"
+                    onClick={() => handleSort("name" as ListCreativesSortBy)}
+                  >
+                    <span className="inline-flex items-center gap-1">
+                      Criativo
+                      {sortBy === "name"
+                        ? sortOrder === "asc"
+                          ? <ArrowUp className="w-3 h-3 text-primary" />
+                          : <ArrowDown className="w-3 h-3 text-primary" />
+                        : <ChevronsUpDown className="w-3 h-3 opacity-30" />
+                      }
+                    </span>
+                  </TableHead>
+                  <SortableHead col="spend" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHead col="commission" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHead col="roas" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHead col="cpa" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHead col="totalSales" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <TableHead>Decisão</TableHead>
                   <TableHead>Previsibilidade</TableHead>
                   <TableHead></TableHead>
@@ -434,16 +476,16 @@ export default function Home() {
                         <div data-testid={`text-name-${creative.id}`}>{creative.name}</div>
                         <div className="text-xs text-muted-foreground">{formatDate(creative.date)}</div>
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{formatCurrency(creative.spend)}</TableCell>
-                      <TableCell className="text-right font-mono text-sm">{formatCurrency(creative.commission)}</TableCell>
-                      <TableCell className="text-right font-bold font-mono">{formatRoas(creative.roas)}</TableCell>
-                      <TableCell className={`text-right font-mono text-sm font-semibold ${getCpaColor(creative.cpa, creative.totalSales)}`}>
+                      <TableCell className="text-right text-sm tabular-nums">{formatCurrency(creative.spend)}</TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">{formatCurrency(creative.commission)}</TableCell>
+                      <TableCell className="text-right font-bold tabular-nums">{formatRoas(creative.roas)}</TableCell>
+                      <TableCell className={`text-right text-sm tabular-nums font-semibold ${getCpaColor(creative.cpa, creative.totalSales)}`}>
                         {creative.totalSales === 0 ? <span className="text-muted-foreground">—</span> : formatCurrency(creative.cpa)}
                       </TableCell>
-                      <TableCell className="text-right font-mono text-sm">{creative.totalSales}</TableCell>
+                      <TableCell className="text-right text-sm tabular-nums">{creative.totalSales}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <Badge variant="outline" className={`font-mono text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                          <Badge variant="outline" className={`text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
                             {creative.decision === "MONITORAR" && (
                               creative.monitorarReason === "decaindo"
                                 ? <TrendingDown className="w-2.5 h-2.5" />

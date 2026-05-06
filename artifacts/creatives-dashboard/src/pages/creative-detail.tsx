@@ -149,7 +149,7 @@ export default function CreativeDetail() {
               </Button>
             </Link>
             <div>
-              <h2 className="text-3xl font-bold tracking-tight font-mono" data-testid="text-creative-name">{creative.name}</h2>
+              <h2 className="text-3xl font-bold tracking-tight" data-testid="text-creative-name">{creative.name}</h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
                 <div className="flex flex-col gap-0.5">
@@ -223,27 +223,27 @@ export default function CreativeDetail() {
               <CardContent className="space-y-5">
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">ROAS</div>
-                  <div className="text-4xl font-bold font-mono text-primary" data-testid="text-roas">{formatRoas(creative.roas)}</div>
+                  <div className="text-4xl font-bold tabular-nums text-primary" data-testid="text-roas">{formatRoas(creative.roas)}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs text-muted-foreground mb-0.5">Gasto</div>
-                    <div className="text-lg font-bold font-mono" data-testid="text-spend">{formatCurrency(creative.spend)}</div>
+                    <div className="text-lg font-bold tabular-nums" data-testid="text-spend">{formatCurrency(creative.spend)}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground mb-0.5">Comissão</div>
-                    <div className="text-lg font-bold font-mono" data-testid="text-commission">{formatCurrency(creative.commission)}</div>
+                    <div className="text-lg font-bold tabular-nums" data-testid="text-commission">{formatCurrency(creative.commission)}</div>
                   </div>
                 </div>
                 <div className="h-px bg-border" />
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <div className="text-xs text-muted-foreground mb-0.5">Total Vendas</div>
-                    <div className="text-lg font-bold font-mono">{creative.totalSales}</div>
+                    <div className="text-lg font-bold tabular-nums">{creative.totalSales}</div>
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground mb-0.5">CPA</div>
-                    <div className={`text-lg font-bold font-mono ${getCpaColor(creative.cpa, creative.totalSales)}`} data-testid="text-cpa">
+                    <div className={`text-lg font-bold tabular-nums ${getCpaColor(creative.cpa, creative.totalSales)}`} data-testid="text-cpa">
                       {creative.totalSales === 0 ? "—" : formatCurrency(creative.cpa)}
                     </div>
                   </div>
@@ -251,7 +251,7 @@ export default function CreativeDetail() {
                 <div className="h-px bg-border" />
                 <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Dias sem Venda</div>
-                  <div className={`text-base font-mono font-semibold ${creative.daysWithoutSales >= 2 ? "text-red-400" : creative.daysWithoutSales === 1 ? "text-yellow-400" : "text-green-400"}`}>
+                  <div className={`text-base font-semibold tabular-nums ${creative.daysWithoutSales >= 2 ? "text-red-400" : creative.daysWithoutSales === 1 ? "text-yellow-400" : "text-green-400"}`}>
                     {creative.daysWithoutSales}
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default function CreativeDetail() {
                   <span className={`text-sm font-semibold ${getPredictabilityColor(creative.predictabilityLabel).includes("green") ? "text-green-400" : getPredictabilityColor(creative.predictabilityLabel).includes("yellow") ? "text-yellow-400" : "text-red-400"}`}>
                     {creative.predictabilityLabel}
                   </span>
-                  <span className="text-2xl font-bold font-mono">{creative.predictabilityScore}<span className="text-sm text-muted-foreground">/100</span></span>
+                  <span className="text-2xl font-bold tabular-nums">{creative.predictabilityScore}<span className="text-sm text-muted-foreground">/100</span></span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-2">
                   <div
@@ -376,7 +376,7 @@ export default function CreativeDetail() {
                   <div key={plan.label} className="bg-background p-4 rounded-lg border border-border">
                     <div className="text-xs text-muted-foreground mb-2">{plan.label}</div>
                     <div className="flex items-end justify-between">
-                      <div className="text-3xl font-bold font-mono">{plan.value}</div>
+                      <div className="text-3xl font-bold tabular-nums">{plan.value}</div>
                       <div className="text-xs text-muted-foreground pb-1">@ {plan.rate}</div>
                     </div>
                   </div>
@@ -386,11 +386,11 @@ export default function CreativeDetail() {
               <div className="mt-6 p-4 rounded-lg border border-border bg-background/50">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Total de Vendas</span>
-                  <span className="text-xl font-bold font-mono">{creative.totalSales}</span>
+                  <span className="text-xl font-bold tabular-nums">{creative.totalSales}</span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-muted-foreground">CPA (Custo por Aquisição)</span>
-                  <span className={`text-xl font-bold font-mono ${getCpaColor(creative.cpa, creative.totalSales)}`}>
+                  <span className={`text-xl font-bold tabular-nums ${getCpaColor(creative.cpa, creative.totalSales)}`}>
                     {creative.totalSales === 0 ? "—" : formatCurrency(creative.cpa)}
                   </span>
                 </div>
