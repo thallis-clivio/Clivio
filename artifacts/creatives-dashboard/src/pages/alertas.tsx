@@ -88,7 +88,7 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: "critic
               "bg-green-500/20 text-green-400 border-green-500/30"
             }`}
           >
-            {creative.decision}
+            {creative.decision === "ATENCAO" ? "ATENÇÃO" : creative.decision}
           </Badge>
         </div>
         <div className="flex items-center gap-4 mt-2.5 flex-wrap">
