@@ -74,6 +74,10 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - `hookRate` is in the DB but excluded from all API surfaces — new rows get default 0
 - Wouter base path is `import.meta.env.BASE_URL`; Clerk `path` props need the FULL path including basePath
 
+## User preferences
+
+- Do NOT propose follow-up tasks at the end of any work session.
+
 ## Pointers
 
 - See `.local/skills/clerk-auth` for Clerk setup reference
