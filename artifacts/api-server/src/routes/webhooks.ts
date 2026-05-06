@@ -45,6 +45,12 @@ router.post("/webhooks/payt", async (req, res) => {
   const payload = req.body as Record<string, unknown>;
 
   const integrationKey = process.env.PAYT_INTEGRATION_KEY;
+  const isDev = process.env.NODE_ENV === "development";
+  if (!integrationKey && !isDev) {
+    req.log.error("payt webhook: PAYT_INTEGRATION_KEY not configured in production");
+    res.status(200).json({ ok: false, reason: "not_configured" });
+    return;
+  }
   if (integrationKey && payload.integration_key !== integrationKey) {
     res.status(200).json({ ok: false, reason: "invalid_key" });
     return;
@@ -66,7 +72,7 @@ router.post("/webhooks/payt", async (req, res) => {
 
   const utmContent = extractUtmContent(payload);
   if (!utmContent) {
-    req.log.warn({ payload }, "payt webhook: utm_content not found");
+    req.log.warn({ status }, "payt webhook: utm_content not found");
     res.status(200).json({ ok: false, reason: "utm_content_missing" });
     return;
   }
@@ -85,7 +91,7 @@ router.post("/webhooks/payt", async (req, res) => {
   const delta = isApproved ? 1 : -1;
 
   await db.update(creativesTable)
-    .set({ [planField]: sql`${creativesTable[planField as keyof typeof creativesTable]} + ${delta}` })
+    .set({ [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)` })
     .where(sql`id = ${creative.id}`);
 
   req.log.info({ creativeId: creative.id, planField, delta, status }, "payt webhook processed");
