@@ -11,12 +11,13 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban, Loader2, Link2, Copy, Check } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban, Loader2, Link2, Copy, Check, Info, FlaskConical } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip as UITooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { CreativeForm } from "@/components/creative-form";
 import { useState, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -117,6 +118,10 @@ export default function CreativeDetail() {
   const [isStreaming, setIsStreaming] = useState(false);
   const [claudeError, setClaudeError] = useState("");
   const [trackingCopied, setTrackingCopied] = useState(false);
+  const [isSimOpen, setIsSimOpen] = useState(false);
+  const [simPlan, setSimPlan] = useState("7m");
+  const [simIsLtv, setSimIsLtv] = useState(false);
+  const [simLoading, setSimLoading] = useState(false);
   const { getToken } = useAuth();
   const { user } = useUser();
 
@@ -158,6 +163,27 @@ export default function CreativeDetail() {
         },
         onError: () => toast({ title: "Erro ao excluir", variant: "destructive" })
       });
+    }
+  };
+
+  const handleSimulate = async () => {
+    if (!creative || !user?.id) return;
+    setSimLoading(true);
+    try {
+      const resp = await fetch(`${import.meta.env.BASE_URL}api/webhooks/simulate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ utmContent: `${user.id}::${creative.name}`, plan: simPlan, isLtv: simIsLtv }),
+      });
+      if (!resp.ok) throw new Error();
+      toast({ title: simIsLtv ? "Venda LTV simulada!" : "Venda simulada!", description: `Plano ${simPlan}` });
+      setIsSimOpen(false);
+      queryClient.invalidateQueries({ queryKey: getGetCreativeQueryKey(creativeId) });
+      invalidateAll();
+    } catch {
+      toast({ title: "Erro ao simular venda", variant: "destructive" });
+    } finally {
+      setSimLoading(false);
     }
   };
 
@@ -299,6 +325,46 @@ export default function CreativeDetail() {
                 : <BrainCircuit className="w-4 h-4" />}
               {isStreaming ? "Analisando..." : "Analisar com Claude"}
             </Button>
+            <Dialog open={isSimOpen} onOpenChange={setIsSimOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2" data-testid="button-simulate">
+                  <FlaskConical className="w-4 h-4" />
+                  Simular Venda
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[400px] border-border">
+                <DialogHeader><DialogTitle>Simular Venda</DialogTitle></DialogHeader>
+                <div className="space-y-5 pt-2">
+                  <div>
+                    <p className="text-sm font-medium mb-2">Plano</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["2m","3m","5m","7m","9m","12m","16m","20m"].map(p => (
+                        <Button key={p} variant={simPlan === p ? "default" : "outline"} size="sm" className="text-xs" onClick={() => setSimPlan(p)}>{p}</Button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 rounded-lg border border-border bg-violet-500/5">
+                    <input
+                      type="checkbox"
+                      id="sim-ltv"
+                      checked={simIsLtv}
+                      onChange={e => setSimIsLtv(e.target.checked)}
+                      className="mt-0.5 w-4 h-4 accent-violet-500 cursor-pointer"
+                    />
+                    <div>
+                      <label htmlFor="sim-ltv" className="text-sm font-medium cursor-pointer">É cross-sell (LTV)?</label>
+                      <p className="text-[11px] text-muted-foreground mt-0.5">LTV não afeta ROAS, CPA nem o motor de decisão — apenas acumula em Comissão LTV.</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="outline" onClick={() => setIsSimOpen(false)}>Cancelar</Button>
+                    <Button onClick={handleSimulate} disabled={simLoading} className={simIsLtv ? "bg-violet-600 hover:bg-violet-700" : ""}>
+                      {simLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simular"}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="icon" data-testid="button-edit"><Edit className="w-4 h-4" /></Button>
@@ -394,17 +460,27 @@ export default function CreativeDetail() {
                     <div className="text-lg font-bold tabular-nums" data-testid="text-commission">{formatCurrency(creative.commission)}</div>
                   </div>
                 </div>
-                {creative.ltvCommission > 0 && (
-                  <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/20">
+                <TooltipProvider>
+                  <div className={`flex items-center justify-between px-3 py-2 rounded-lg border ${creative.ltvCommission > 0 ? "bg-violet-500/10 border-violet-500/20" : "bg-muted/30 border-border/40"}`}>
                     <div>
-                      <div className="text-xs text-violet-400 font-medium">Comissão LTV</div>
+                      <div className={`text-xs font-medium flex items-center gap-1 ${creative.ltvCommission > 0 ? "text-violet-400" : "text-muted-foreground"}`}>
+                        Comissão LTV
+                        <UITooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-3 h-3 cursor-help opacity-60" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-[220px] text-xs">
+                            LTV não afeta ROAS, CPA nem o motor de decisão — acumula separado das vendas front.
+                          </TooltipContent>
+                        </UITooltip>
+                      </div>
                       <div className="text-xs text-muted-foreground">cross-sell / upsell</div>
                     </div>
-                    <div className="text-base font-bold tabular-nums text-violet-400">
-                      {formatCurrency(creative.ltvCommission)}
+                    <div className={`text-base font-bold tabular-nums ${creative.ltvCommission > 0 ? "text-violet-400" : "text-muted-foreground"}`}>
+                      {creative.ltvCommission > 0 ? formatCurrency(creative.ltvCommission) : "—"}
                     </div>
                   </div>
-                )}
+                </TooltipProvider>
                 <div className="h-px bg-border" />
                 <div className="grid grid-cols-2 gap-3">
                   <div>

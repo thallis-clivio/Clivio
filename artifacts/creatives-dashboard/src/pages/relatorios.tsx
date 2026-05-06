@@ -89,18 +89,20 @@ export default function Relatorios() {
     return { frontCommission: front, ltvCommission: ltv, total: front + ltv };
   }, [creatives]);
 
-  const pareto = useMemo(() => {
-    if (!creatives) return { heroes: [] as NonNullable<typeof creatives>, rest: [] as NonNullable<typeof creatives>, total: 0 };
-    const srt = [...creatives].filter(c => c.commission > 0).sort((a, b) => b.commission - a.commission);
-    const total = srt.reduce((s, c) => s + c.commission, 0);
-    if (total === 0) return { heroes: [] as typeof srt, rest: [] as typeof srt, total: 0 };
-    let cum = 0, cutoff = srt.length;
-    for (let i = 0; i < srt.length; i++) {
-      cum += srt[i].commission;
-      if (cum / total >= 0.8) { cutoff = i + 1; break; }
-    }
-    return { heroes: srt.slice(0, cutoff), rest: srt.slice(cutoff), total };
+  const ltvTopCreatives = useMemo(() => {
+    if (!creatives) return [];
+    return [...creatives]
+      .filter(c => (c.ltvCommission ?? 0) > 0)
+      .sort((a, b) => (b.ltvCommission ?? 0) - (a.ltvCommission ?? 0))
+      .slice(0, 3)
+      .map(c => ({
+        ...c,
+        ltvRatio: c.commission > 0
+          ? Math.round(((c.ltvCommission ?? 0) / c.commission) * 100)
+          : null,
+      }));
   }, [creatives]);
+
 
   const sorted = useMemo(() => {
     if (!creatives) return [];
@@ -297,46 +299,40 @@ export default function Relatorios() {
             </CardContent>
           </Card>
 
-          {/* Concentração de Comissão */}
+          {/* Criativos com maior LTV */}
           <Card className="border-border/50 bg-card/50">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <PieChart className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Concentração de Comissão</CardTitle>
+                <TrendingUp className="h-4 w-4 text-violet-400" />
+                <CardTitle className="text-base">Criativos com maior LTV</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground">Quais criativos geram 80% da sua receita — escale esses, corte o resto.</p>
+              <p className="text-xs text-muted-foreground">Criativos que mais geraram comissão de cross-sell — audiência mais propensa a comprar produtos complementares.</p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="space-y-2">{[1,2,3].map(i => <Skeleton key={i} className="h-10 w-full" />)}</div>
-              ) : pareto.total === 0 ? (
-                <p className="text-sm text-muted-foreground py-4">Nenhuma comissão gerada neste período.</p>
+              ) : ltvTopCreatives.length === 0 ? (
+                <div className="py-4 space-y-2">
+                  <p className="text-sm text-muted-foreground">Nenhum LTV registrado neste período.</p>
+                  <p className="text-[11px] text-muted-foreground">Configure o <strong>Produto Principal</strong> em Configurações e o Clivio separará automaticamente as vendas front das cross-sells.</p>
+                </div>
               ) : (
                 <div className="space-y-2 pt-1">
-                  <div className="flex items-center gap-2 p-2.5 rounded-lg bg-primary/5 border border-primary/20 mb-3">
-                    <TrendingUp className="w-3.5 h-3.5 text-primary flex-none" />
-                    <p className="text-xs text-primary font-medium">
-                      {pareto.heroes.length === 1 ? "1 criativo gera" : `${pareto.heroes.length} criativos geram`} 80% da comissão do período
-                    </p>
-                  </div>
-                  {pareto.heroes.map((c, i) => {
-                    const pct = Math.round((c.commission / pareto.total) * 100);
-                    return (
-                      <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-green-500/5 border border-green-500/10">
-                        <span className="text-xs font-bold text-green-400 w-5 text-center shrink-0">{i + 1}</span>
+                  {ltvTopCreatives.map((c, i) => (
+                    <Link key={c.id} href={`/creatives/${c.id}`}>
+                      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-violet-500/5 border border-violet-500/10 hover:opacity-80 transition-opacity cursor-pointer">
+                        <span className="text-xs font-bold text-violet-400 w-5 text-center shrink-0">{i + 1}</span>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate text-foreground">{c.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatCurrency(c.commission)} · {pct}% do total</p>
+                          <p className="text-xs text-muted-foreground">
+                            LTV {formatCurrency(c.ltvCommission ?? 0)}
+                            {c.ltvRatio !== null ? ` · ${c.ltvRatio}% do front` : ""}
+                          </p>
                         </div>
-                        <Badge variant="outline" className="text-xs border bg-green-500/10 text-green-400 border-green-500/20 shrink-0">Top</Badge>
+                        <Badge variant="outline" className="text-xs border bg-violet-500/10 text-violet-400 border-violet-500/20 shrink-0">LTV</Badge>
                       </div>
-                    );
-                  })}
-                  {pareto.rest.length > 0 && (
-                    <p className="text-[11px] text-muted-foreground pl-2 pt-1">
-                      + {pareto.rest.length} outro{pareto.rest.length > 1 ? "s" : ""} criativo{pareto.rest.length > 1 ? "s" : ""} compõem os {100 - Math.round((pareto.heroes.reduce((s, c) => s + c.commission, 0) / pareto.total) * 100)}% restantes
-                    </p>
-                  )}
+                    </Link>
+                  ))}
                 </div>
               )}
             </CardContent>
