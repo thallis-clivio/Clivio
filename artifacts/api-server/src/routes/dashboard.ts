@@ -1,18 +1,54 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { withMetrics, filterByDateRange, generateSyntheticHistory, getCommissionRates } from "./creatives";
+import { withMetrics, filterByDateRange, getCommissionRates } from "./creatives";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
+
+function getGroupKey(dateStr: string, groupBy: "day" | "week" | "month"): string {
+  const d = new Date(dateStr + "T00:00:00");
+  if (groupBy === "day") return dateStr;
+  if (groupBy === "week") {
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d);
+    monday.setDate(diff);
+    return monday.toISOString().split("T")[0];
+  }
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+}
+
+function formatChartLabel(dateStr: string, groupBy: "day" | "week" | "month"): string {
+  const [year, month, day] = dateStr.split("-");
+  if (groupBy === "day") return `${day}/${month}`;
+  if (groupBy === "week") return `Sem ${day}/${month}`;
+  const monthNames = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  return `${monthNames[parseInt(month, 10) - 1]}/${year.slice(2)}`;
+}
+
+function determineGroupBy(dateFilter?: string, dateFrom?: string, dateTo?: string): "day" | "week" | "month" {
+  if (dateFrom && dateTo) {
+    const from = new Date(dateFrom + "T00:00:00");
+    const to = new Date(dateTo + "T00:00:00");
+    const days = Math.round((to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+    if (days <= 45) return "day";
+    if (days <= 180) return "week";
+    return "month";
+  }
+  if (dateFilter === "all") return "week";
+  return "day";
+}
 
 // GET /dashboard/summary
 router.get("/dashboard/summary", requireAuth, async (req, res) => {
   const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const dateFrom = req.query.dateFrom as string | undefined;
+  const dateTo = req.query.dateTo as string | undefined;
 
-  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter, dateFrom, dateTo));
 
   if (filtered.length === 0) {
     res.json({ totalSpend: 0, totalCommission: 0, averageRoas: 0, averageCpa: 0, totalSales: 0, totalCreatives: 0 });
@@ -26,7 +62,6 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
   const totalSales = results.reduce((s, c) => s + c.totalSales, 0);
   const averageRoas = totalSpend > 0 ? Math.round((totalCommission / totalSpend) * 100) / 100 : 0;
   const averageCpa = totalSales > 0 ? Math.round((totalSpend / totalSales) * 100) / 100 : 0;
-
   const topCreativeByRoas = results.reduce((best, c) => c.roas > best.roas ? c : best);
 
   res.json({
@@ -44,9 +79,11 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
 router.get("/dashboard/decision-breakdown", requireAuth, async (req, res) => {
   const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const dateFrom = req.query.dateFrom as string | undefined;
+  const dateTo = req.query.dateTo as string | undefined;
 
-  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter, dateFrom, dateTo));
   const rates = await getCommissionRates(userId);
   const results = filtered.map(r => withMetrics(r, rates));
 
@@ -60,9 +97,11 @@ router.get("/dashboard/decision-breakdown", requireAuth, async (req, res) => {
 router.get("/dashboard/performance-summary", requireAuth, async (req, res) => {
   const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const dateFrom = req.query.dateFrom as string | undefined;
+  const dateTo = req.query.dateTo as string | undefined;
 
-  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter, dateFrom, dateTo));
 
   if (filtered.length === 0) {
     res.json({
@@ -100,46 +139,42 @@ router.get("/dashboard/performance-summary", requireAuth, async (req, res) => {
 });
 
 // GET /dashboard/charts
+// Groups real sales data by date bucket (day/week/month) — no synthetic data.
+// Only points with totalSales > 0 are included.
 router.get("/dashboard/charts", requireAuth, async (req, res) => {
   const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const dateFrom = req.query.dateFrom as string | undefined;
+  const dateTo = req.query.dateTo as string | undefined;
 
-  // For the dashboard chart always use all creatives (date filter just changes the window)
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
   const rates = await getCommissionRates(userId);
   const results = rows.map(r => withMetrics(r, rates));
 
-  const byDate: Record<string, { totalSales: number }> = {};
+  // Filter to the requested window
+  const filtered = results.filter(r => filterByDateRange(r.date, dateFilter, dateFrom, dateTo));
 
-  for (const c of results) {
-    if (!byDate[c.date]) byDate[c.date] = { totalSales: 0 };
-    byDate[c.date].totalSales += c.totalSales;
+  // Determine how to group
+  const groupBy = determineGroupBy(dateFilter, dateFrom, dateTo);
+
+  // Aggregate real sales by bucket
+  const byGroup: Record<string, number> = {};
+  for (const c of filtered) {
+    if (c.totalSales === 0) continue;
+    const key = getGroupKey(c.date, groupBy);
+    byGroup[key] = (byGroup[key] ?? 0) + c.totalSales;
   }
 
-  const uniqueDates = Object.keys(byDate);
-
-  // If only 1 date point (all creatives added on same day), generate a 7-day synthetic aggregate
-  if (uniqueDates.length <= 1) {
-    const syntheticByDate: Record<string, number> = {};
-    for (const c of results) {
-      const history = generateSyntheticHistory(c.date, c.decision, c.monitorarReason, c.daysWithoutSales, c.totalSales);
-      for (const point of history) {
-        syntheticByDate[point.date] = (syntheticByDate[point.date] ?? 0) + point.totalSales;
-      }
-    }
-    const chartData = Object.entries(syntheticByDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, totalSales]) => ({ date, totalSales, roas: 0, cpa: 0, spend: 0, commission: 0 }));
-    res.json(chartData);
-    return;
-  }
-
-  const chartData = Object.entries(byDate)
+  const chartData = Object.entries(byGroup)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, d]) => ({
+    .map(([date, totalSales]) => ({
       date,
-      totalSales: d.totalSales,
-      roas: 0, cpa: 0, spend: 0, commission: 0,
+      label: formatChartLabel(date, groupBy),
+      totalSales,
+      roas: 0,
+      cpa: 0,
+      spend: 0,
+      commission: 0,
     }));
 
   res.json(chartData);

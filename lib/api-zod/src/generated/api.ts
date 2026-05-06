@@ -64,6 +64,8 @@ export const ListCreativesQueryParams = zod.object({
     .optional(),
   sortOrder: zod.enum(["asc", "desc"]).optional(),
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
 });
 
 export const ListCreativesResponseItem = zod
@@ -219,6 +221,7 @@ export const GetCreativeChartQueryParams = zod.object({
 
 export const GetCreativeChartResponseItem = zod.object({
   date: zod.string(),
+  label: zod.string().optional(),
   roas: zod.number(),
   cpa: zod.number(),
   totalSales: zod.number(),
@@ -256,6 +259,8 @@ export const AnalyzeCreativeResponse = zod.object({
  */
 export const GetDashboardSummaryQueryParams = zod.object({
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
 });
 
 export const GetDashboardSummaryResponse = zod.object({
@@ -301,6 +306,8 @@ export const GetDashboardSummaryResponse = zod.object({
  */
 export const GetDecisionBreakdownQueryParams = zod.object({
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
 });
 
 export const GetDecisionBreakdownResponse = zod.object({
@@ -314,6 +321,8 @@ export const GetDecisionBreakdownResponse = zod.object({
  */
 export const GetPerformanceSummaryQueryParams = zod.object({
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
 });
 
 export const GetPerformanceSummaryResponse = zod.object({
@@ -352,10 +361,13 @@ export const GetPerformanceSummaryResponse = zod.object({
  */
 export const GetDashboardChartsQueryParams = zod.object({
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+  dateFrom: zod.coerce.string().optional(),
+  dateTo: zod.coerce.string().optional(),
 });
 
 export const GetDashboardChartsResponseItem = zod.object({
   date: zod.string(),
+  label: zod.string().optional(),
   roas: zod.number(),
   cpa: zod.number(),
   totalSales: zod.number(),

@@ -93,6 +93,16 @@ paths:
           schema:
             type: string
             enum: [daily, weekly, monthly, all]
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: List of creatives with computed metrics
@@ -269,6 +279,16 @@ paths:
           schema:
             type: string
             enum: [daily, weekly, monthly, all]
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Dashboard summary
@@ -289,6 +309,16 @@ paths:
           schema:
             type: string
             enum: [daily, weekly, monthly, all]
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Decision breakdown counts
@@ -309,6 +339,16 @@ paths:
           schema:
             type: string
             enum: [daily, weekly, monthly, all]
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Performance summary
@@ -329,6 +369,16 @@ paths:
           schema:
             type: string
             enum: [daily, weekly, monthly, all]
+        - name: dateFrom
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          required: false
+          schema:
+            type: string
       responses:
         "200":
           description: Chart data points by date
@@ -600,6 +650,8 @@ components:
       properties:
         date:
           type: string
+        label:
+          type: string
         roas:
           type: number
         cpa:
@@ -612,9 +664,9 @@ components:
           type: number
       required:
         - date
+        - totalSales
         - roas
         - cpa
-        - totalSales
         - spend
         - commission
 

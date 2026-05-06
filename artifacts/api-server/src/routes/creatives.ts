@@ -135,7 +135,13 @@ function computePredictability(
   return { score, label };
 }
 
-function filterByDateRange(date: string, dateFilter?: string): boolean {
+function filterByDateRange(date: string, dateFilter?: string, dateFrom?: string, dateTo?: string): boolean {
+  if (dateFrom && dateTo) {
+    const d = new Date(date + "T00:00:00");
+    const from = new Date(dateFrom + "T00:00:00");
+    const to = new Date(dateTo + "T23:59:59");
+    return d >= from && d <= to;
+  }
   if (!dateFilter || dateFilter === "all") return true;
   const now = new Date();
   now.setHours(23, 59, 59, 999);

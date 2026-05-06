@@ -13,7 +13,9 @@ import {
   ListCreativesParams, CreativeWithMetricsDecision,
   ListCreativesSortBy, ListCreativesSortOrder,
   PerformanceSummary, SimulateSaleBodyPlan,
+  GetDashboardSummaryParams, GetDashboardChartsParams, GetPerformanceSummaryParams,
 } from "@workspace/api-client-react";
+import { DateRangePicker } from "@/components/date-range-picker";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type DateFilter = "weekly" | "daily" | "monthly" | "all";
+type DateFilter = "weekly" | "daily" | "monthly" | "all" | "custom";
 
 function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
@@ -75,11 +77,11 @@ function getCpaColor(cpa: number, totalSales: number) {
   return "text-red-400";
 }
 
-const DATE_FILTER_LABELS: Record<DateFilter, string> = {
+const DATE_FILTER_LABELS: Record<Exclude<DateFilter, "custom">, string> = {
   daily: "Hoje",
-  weekly: "Últimos 7 dias",
-  monthly: "Últimos 15 dias",
-  all: "Últimos 30 dias",
+  weekly: "7 dias",
+  monthly: "15 dias",
+  all: "30 dias",
 };
 
 const SORTABLE_COLS: { key: ListCreativesSortBy; label: string }[] = [
@@ -229,6 +231,8 @@ export default function Home() {
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSimulateOpen, setIsSimulateOpen] = useState(false);
   const [simCreative, setSimCreative] = useState("");
@@ -260,12 +264,23 @@ export default function Home() {
   }
 
   const creativeParams: ListCreativesParams = useMemo(() => {
-    const p: ListCreativesParams = { sortBy, sortOrder, dateFilter };
+    const p: ListCreativesParams = { sortBy, sortOrder };
+    if (dateFilter === "custom") {
+      if (customFrom) p.dateFrom = customFrom;
+      if (customTo) p.dateTo = customTo;
+    } else {
+      p.dateFilter = dateFilter;
+    }
     if (decisionFilter !== "ALL") p.decision = decisionFilter as CreativeWithMetricsDecision;
     return p;
-  }, [decisionFilter, sortBy, sortOrder, dateFilter]);
+  }, [decisionFilter, sortBy, sortOrder, dateFilter, customFrom, customTo]);
 
-  const dashParams = useMemo(() => ({ dateFilter }), [dateFilter]);
+  const dashParams = useMemo((): GetDashboardSummaryParams & GetDashboardChartsParams & GetPerformanceSummaryParams => {
+    if (dateFilter === "custom") {
+      return { dateFrom: customFrom || undefined, dateTo: customTo || undefined };
+    }
+    return { dateFilter };
+  }, [dateFilter, customFrom, customTo]);
 
   const { data: creatives, isLoading: isCreativesLoading } = useListCreatives(creativeParams, {
     query: { queryKey: getListCreativesQueryKey(creativeParams) }
@@ -285,7 +300,12 @@ export default function Home() {
 
   const formattedChartData = useMemo(() => {
     if (!chartData) return [];
-    return chartData.map(d => ({ ...d, dateLabel: formatDate(d.date) }));
+    return chartData.map(d => ({ ...d, dateLabel: d.label ?? formatDate(d.date) }));
+  }, [chartData]);
+
+  const hasSalesData = useMemo(() => {
+    if (!chartData) return false;
+    return chartData.some(d => d.totalSales > 0);
   }, [chartData]);
 
   return (
@@ -300,7 +320,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <div className="flex rounded-md border border-border overflow-hidden">
-              {(["daily", "weekly", "monthly", "all"] as DateFilter[]).map(f => (
+              {(["daily", "weekly", "monthly", "all"] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => setDateFilter(f)}
@@ -314,6 +334,17 @@ export default function Home() {
                   {DATE_FILTER_LABELS[f]}
                 </button>
               ))}
+              <DateRangePicker
+                from={customFrom}
+                to={customTo}
+                onChange={(f, t) => {
+                  setCustomFrom(f);
+                  setCustomTo(t);
+                  if (f && t) setDateFilter("custom");
+                }}
+                isActive={dateFilter === "custom"}
+                onActivate={() => setDateFilter("custom")}
+              />
             </div>
             <Dialog open={isSimulateOpen} onOpenChange={(open) => {
               setIsSimulateOpen(open);
@@ -489,9 +520,11 @@ export default function Home() {
               <div className="h-[280px] w-full">
                 {isChartLoading ? (
                   <Skeleton className="w-full h-full" />
-                ) : formattedChartData.length === 0 ? (
-                  <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                    Nenhum dado para o período selecionado.
+                ) : !hasSalesData ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
+                    <Activity className="w-8 h-8 opacity-20" />
+                    <p>Nenhuma venda registrada ainda.</p>
+                    <p className="text-xs opacity-60">O gráfico aparece quando há dados de vendas.</p>
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -531,7 +564,7 @@ export default function Home() {
         {/* Creatives Table */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <CardTitle>Biblioteca de Criativos</CardTitle>
+            <CardTitle>Central de Criativos</CardTitle>
             <div className="flex items-center gap-2">
               <Select value={decisionFilter} onValueChange={v => setDecisionFilter(v as any)}>
                 <SelectTrigger className="w-[155px]">

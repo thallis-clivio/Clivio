@@ -138,6 +138,7 @@ export interface PerformanceSummary {
 
 export interface ChartDataPoint {
   date: string;
+  label?: string;
   roas: number;
   cpa: number;
   totalSales: number;
@@ -208,11 +209,61 @@ export interface WebhookResponse {
   delta?: number;
 }
 
+export type ListCreativesQueryParamsDecision =
+  (typeof ListCreativesQueryParamsDecision)[keyof typeof ListCreativesQueryParamsDecision];
+
+export const ListCreativesQueryParamsDecision = {
+  ESCALAR: "ESCALAR",
+  MONITORAR: "MONITORAR",
+  PAUSAR: "PAUSAR",
+} as const;
+
+export type ListCreativesQueryParamsSortBy =
+  (typeof ListCreativesQueryParamsSortBy)[keyof typeof ListCreativesQueryParamsSortBy];
+
+export const ListCreativesQueryParamsSortBy = {
+  roas: "roas",
+  spend: "spend",
+  commission: "commission",
+  name: "name",
+  cpa: "cpa",
+  totalSales: "totalSales",
+} as const;
+
+export type ListCreativesQueryParamsSortOrder =
+  (typeof ListCreativesQueryParamsSortOrder)[keyof typeof ListCreativesQueryParamsSortOrder];
+
+export const ListCreativesQueryParamsSortOrder = {
+  asc: "asc",
+  desc: "desc",
+} as const;
+
+export type ListCreativesQueryParamsDateFilter =
+  (typeof ListCreativesQueryParamsDateFilter)[keyof typeof ListCreativesQueryParamsDateFilter];
+
+export const ListCreativesQueryParamsDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
+export interface ListCreativesQueryParams {
+  decision?: ListCreativesQueryParamsDecision;
+  sortBy?: ListCreativesQueryParamsSortBy;
+  sortOrder?: ListCreativesQueryParamsSortOrder;
+  dateFilter?: ListCreativesQueryParamsDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
 export type ListCreativesParams = {
   decision?: ListCreativesDecision;
   sortBy?: ListCreativesSortBy;
   sortOrder?: ListCreativesSortOrder;
   dateFilter?: ListCreativesDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type ListCreativesDecision =
@@ -270,6 +321,8 @@ export const GetCreativeChartDateFilter = {
 
 export type GetDashboardSummaryParams = {
   dateFilter?: GetDashboardSummaryDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type GetDashboardSummaryDateFilter =
@@ -284,6 +337,8 @@ export const GetDashboardSummaryDateFilter = {
 
 export type GetDecisionBreakdownParams = {
   dateFilter?: GetDecisionBreakdownDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type GetDecisionBreakdownDateFilter =
@@ -298,6 +353,8 @@ export const GetDecisionBreakdownDateFilter = {
 
 export type GetPerformanceSummaryParams = {
   dateFilter?: GetPerformanceSummaryDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type GetPerformanceSummaryDateFilter =
@@ -312,6 +369,8 @@ export const GetPerformanceSummaryDateFilter = {
 
 export type GetDashboardChartsParams = {
   dateFilter?: GetDashboardChartsDateFilter;
+  dateFrom?: string;
+  dateTo?: string;
 };
 
 export type GetDashboardChartsDateFilter =
