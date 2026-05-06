@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation } from "wouter";
 import {
   useGetDashboardSummary, getGetDashboardSummaryQueryKey,
   useGetPerformanceSummary, getGetPerformanceSummaryQueryKey,
@@ -164,12 +165,13 @@ const DECISION_CONFIG = [
 
 function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown; isLoading: boolean }) {
   const total = data ? Object.values(data).reduce((s, v) => s + v, 0) : 0;
+  const [, navigate] = useLocation();
 
   return (
     <Card className="border-border/50 bg-card/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Distribuição por Decisão</CardTitle>
-        <p className="text-xs text-muted-foreground">Estado atual de todo o portfólio — independente do período selecionado</p>
+        <p className="text-xs text-muted-foreground">Estado atual de todo o portfólio — independente do período selecionado. Clique para filtrar.</p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -182,15 +184,17 @@ function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown
               const count = data?.[key as keyof DecisionBreakdown] ?? 0;
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
-                <div
+                <button
                   key={key}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBorder}`}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBorder} hover:bg-muted/40 transition-colors cursor-pointer w-full`}
                   data-testid={`decision-${key.toLowerCase()}`}
+                  onClick={() => navigate(`/criativos?decision=${key}`)}
+                  title={`Ver criativos: ${label}`}
                 >
                   <span className={`text-3xl font-bold tabular-nums leading-none ${colorText}`}>{count}</span>
                   <span className={`text-[10px] font-semibold uppercase tracking-wide ${colorLabel}`}>{label}</span>
                   <span className="text-[10px] text-muted-foreground">{pct}%</span>
-                </div>
+                </button>
               );
             })}
           </div>

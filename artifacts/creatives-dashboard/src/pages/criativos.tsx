@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link } from "wouter";
+import { Link, useSearch } from "wouter";
 import { useUser, useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -142,8 +142,16 @@ function CopyLinkButton({ creativeName, userId }: { creativeName: string; userId
   );
 }
 
+const VALID_DECISIONS = new Set(["ESCALAR", "LUCRATIVO", "MONITORAR", "ATENCAO", "PAUSAR"]);
+
 export default function Criativos() {
-  const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
+  const search = useSearch();
+  const initialDecision = useMemo(() => {
+    const param = new URLSearchParams(search).get("decision")?.toUpperCase() ?? "";
+    return VALID_DECISIONS.has(param) ? (param as CreativeWithMetricsDecision) : "ALL";
+  }, [search]);
+
+  const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">(initialDecision);
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
