@@ -2,6 +2,7 @@ import { useParams, Link, useLocation } from "wouter";
 import {
   useGetCreative, getGetCreativeQueryKey,
   useDeleteCreative, useAnalyzeCreative,
+  useGetCreativeChart, getGetCreativeChartQueryKey,
   getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
   getGetDecisionBreakdownQueryKey, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
@@ -9,15 +10,28 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart, AlertTriangle, Gauge } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
+} from "recharts";
+
+type DateFilter = "all" | "daily" | "weekly" | "monthly";
+
+const DATE_FILTER_LABELS: Record<DateFilter, string> = {
+  all: "Tudo",
+  daily: "Hoje",
+  weekly: "Semana",
+  monthly: "Mês",
+};
 
 function getDecisionColor(decision: string) {
   switch (decision) {
@@ -49,10 +63,21 @@ export default function CreativeDetail() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [chartDateFilter, setChartDateFilter] = useState<DateFilter>("all");
 
   const { data: creative, isLoading } = useGetCreative(creativeId, {
     query: { queryKey: getGetCreativeQueryKey(creativeId), enabled: !!creativeId }
   });
+
+  const chartParams = useMemo(() => ({ dateFilter: chartDateFilter }), [chartDateFilter]);
+  const { data: chartData, isLoading: isChartLoading } = useGetCreativeChart(creativeId, chartParams, {
+    query: { queryKey: getGetCreativeChartQueryKey(creativeId, chartParams), enabled: !!creativeId }
+  });
+
+  const formattedChartData = useMemo(() => {
+    if (!chartData) return [];
+    return chartData.map(d => ({ ...d, dateLabel: formatDate(d.date) }));
+  }, [chartData]);
 
   const deleteCreative = useDeleteCreative();
   const analyzeCreative = useAnalyzeCreative();
@@ -254,11 +279,71 @@ export default function CreativeDetail() {
             )}
           </div>
 
-          {/* Sales Breakdown */}
-          <Card className="md:col-span-2 border-border/50 bg-card/50">
+          {/* Sales Over Time + Breakdown */}
+          <div className="md:col-span-2 space-y-4">
+
+            {/* Sales chart card */}
+            <Card className="border-border/50 bg-card/50">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                    Vendas por Dia (este criativo)
+                  </CardTitle>
+                  <div className="flex rounded-md border border-border overflow-hidden">
+                    {(["all", "daily", "weekly", "monthly"] as DateFilter[]).map(f => (
+                      <button
+                        key={f}
+                        onClick={() => setChartDateFilter(f)}
+                        className={`px-3 py-1 text-xs font-medium transition-colors ${
+                          chartDateFilter === f
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {DATE_FILTER_LABELS[f]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px] w-full">
+                  {isChartLoading ? (
+                    <Skeleton className="w-full h-full" />
+                  ) : formattedChartData.length === 0 ? (
+                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
+                      Nenhum dado para o período selecionado.
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={formattedChartData} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                        <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} dy={8} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }}
+                          formatter={(v: number) => [v, "Vendas"]}
+                          labelFormatter={label => `Data: ${label}`}
+                        />
+                        <Line
+                          dataKey="totalSales"
+                          stroke="hsl(142 71% 45%)"
+                          strokeWidth={2.5}
+                          dot={{ fill: "hsl(142 71% 45%)", r: 4, strokeWidth: 0 }}
+                          activeDot={{ r: 6, strokeWidth: 0 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Sales by plan */}
+            <Card className="border-border/50 bg-card/50">
             <CardHeader className="pb-4 border-b border-border">
               <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-                <LineChart className="w-4 h-4" />
+                <LineIcon className="w-4 h-4" />
                 Vendas por Plano
               </CardTitle>
             </CardHeader>
@@ -299,6 +384,7 @@ export default function CreativeDetail() {
             </CardContent>
           </Card>
         </div>
+      </div>
       </div>
     </Layout>
   );

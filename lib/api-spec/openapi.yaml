@@ -165,6 +165,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /creatives/{id}/chart:
+    get:
+      operationId: getCreativeChart
+      tags: [creatives]
+      summary: Sales over time for a creative (grouped by date, matched by name)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: dateFilter
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly, all]
+      responses:
+        "200":
+          description: Sales chart data grouped by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChartDataPoint"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /creatives/{id}/analyze:
     post:
       operationId: analyzeCreative

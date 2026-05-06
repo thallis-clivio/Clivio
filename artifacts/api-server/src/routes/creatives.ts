@@ -239,6 +239,32 @@ router.delete("/creatives/:id", async (req, res) => {
   res.status(204).send();
 });
 
+// GET /creatives/:id/chart
+router.get("/creatives/:id/chart", async (req, res) => {
+  const id = Number(req.params.id);
+  if (isNaN(id)) { res.status(400).json({ error: "ID inválido" }); return; }
+
+  const [base] = await db.select().from(creativesTable).where(eq(creativesTable.id, id));
+  if (!base) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
+
+  const dateFilter = req.query.dateFilter as string | undefined;
+  const all = await db.select().from(creativesTable);
+
+  // All rows with the same creative name, filtered by date range
+  const rows = all.filter(r => r.name === base.name && filterByDateRange(r.date, dateFilter));
+  const byDate: Record<string, number> = {};
+  for (const r of rows) {
+    const sales = computeTotalSales(r);
+    byDate[r.date] = (byDate[r.date] ?? 0) + sales;
+  }
+
+  const chartData = Object.entries(byDate)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, totalSales]) => ({ date, totalSales, roas: 0, cpa: 0, spend: 0, commission: 0 }));
+
+  res.json(chartData);
+});
+
 // POST /creatives/:id/analyze
 router.post("/creatives/:id/analyze", async (req, res) => {
   const parseResult = AnalyzeCreativeParams.safeParse({ id: Number(req.params.id) });

@@ -149,6 +149,20 @@ export const ListCreativesDateFilter = {
   all: "all",
 } as const;
 
+export type GetCreativeChartParams = {
+  dateFilter?: GetCreativeChartDateFilter;
+};
+
+export type GetCreativeChartDateFilter =
+  (typeof GetCreativeChartDateFilter)[keyof typeof GetCreativeChartDateFilter];
+
+export const GetCreativeChartDateFilter = {
+  daily: "daily",
+  weekly: "weekly",
+  monthly: "monthly",
+  all: "all",
+} as const;
+
 export type GetDashboardSummaryParams = {
   dateFilter?: GetDashboardSummaryDateFilter;
 };

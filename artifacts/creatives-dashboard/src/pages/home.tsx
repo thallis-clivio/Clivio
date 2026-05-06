@@ -18,8 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
 import {
-  LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Cell,
+  LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer,
 } from "recharts";
 import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, ShoppingCart } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -64,15 +64,12 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
   monthly: "Mês",
 };
 
-type ChartView = "roas" | "cpa" | "sales";
-
 export default function Home() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [chartView, setChartView] = useState<ChartView>("roas");
 
   const creativeParams: ListCreativesParams = useMemo(() => {
     const p: ListCreativesParams = { sortBy, sortOrder, dateFilter };
@@ -205,28 +202,11 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Charts + Decision Breakdown */}
+        {/* Chart + Decision Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 border-border/50 bg-card/50">
             <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Desempenho ao Longo do Tempo</CardTitle>
-                <div className="flex rounded-md border border-border overflow-hidden">
-                  {(["roas", "cpa", "sales"] as ChartView[]).map(v => (
-                    <button
-                      key={v}
-                      onClick={() => setChartView(v)}
-                      className={`px-3 py-1 text-xs font-medium transition-colors ${
-                        chartView === v
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
-                    >
-                      {v === "roas" ? "ROAS" : v === "cpa" ? "CPA" : "Vendas"}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <CardTitle className="text-base">Vendas Totais ao Longo do Tempo</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[280px] w-full">
@@ -238,37 +218,23 @@ export default function Home() {
                   </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    {chartView === "sales" ? (
-                      <BarChart data={formattedChartData} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                        <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} dy={8} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }}
-                          formatter={(v: number) => [v, "Vendas"]}
-                        />
-                        <Bar dataKey="totalSales" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    ) : (
-                      <LineChart data={formattedChartData} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
-                        <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} dy={8} />
-                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false}
-                          tickFormatter={v => chartView === "roas" ? `${v}x` : `R$${v}`}
-                        />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }}
-                          formatter={(v: number) => [chartView === "roas" ? `${v.toFixed(2)}x` : formatCurrency(v), chartView === "roas" ? "ROAS" : "CPA"]}
-                        />
-                        <Line
-                          dataKey={chartView}
-                          stroke={chartView === "roas" ? "hsl(142 71% 45%)" : "hsl(0 84% 60%)"}
-                          strokeWidth={2}
-                          dot={{ fill: chartView === "roas" ? "hsl(142 71% 45%)" : "hsl(0 84% 60%)", r: 4 }}
-                          activeDot={{ r: 6 }}
-                        />
-                      </LineChart>
-                    )}
+                    <LineChart data={formattedChartData} margin={{ top: 5, right: 10, left: 10, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                      <XAxis dataKey="dateLabel" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} dy={8} />
+                      <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: 'hsl(var(--popover))', borderColor: 'hsl(var(--border))', color: 'hsl(var(--popover-foreground))' }}
+                        formatter={(v: number) => [v, "Vendas Totais"]}
+                        labelFormatter={label => `Data: ${label}`}
+                      />
+                      <Line
+                        dataKey="totalSales"
+                        stroke="hsl(142 71% 45%)"
+                        strokeWidth={2.5}
+                        dot={{ fill: "hsl(142 71% 45%)", r: 4, strokeWidth: 0 }}
+                        activeDot={{ r: 6, strokeWidth: 0 }}
+                      />
+                    </LineChart>
                   </ResponsiveContainer>
                 )}
               </div>

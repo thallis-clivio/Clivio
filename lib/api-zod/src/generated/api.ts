@@ -174,6 +174,27 @@ export const DeleteCreativeParams = zod.object({
 });
 
 /**
+ * @summary Sales over time for a creative (grouped by date, matched by name)
+ */
+export const GetCreativeChartParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetCreativeChartQueryParams = zod.object({
+  dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
+});
+
+export const GetCreativeChartResponseItem = zod.object({
+  date: zod.string(),
+  roas: zod.number(),
+  cpa: zod.number(),
+  totalSales: zod.number(),
+  spend: zod.number(),
+  commission: zod.number(),
+});
+export const GetCreativeChartResponse = zod.array(GetCreativeChartResponseItem);
+
+/**
  * @summary AI analysis of a creative's performance
  */
 export const AnalyzeCreativeParams = zod.object({

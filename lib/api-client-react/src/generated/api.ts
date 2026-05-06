@@ -24,6 +24,7 @@ import type {
   DashboardSummary,
   DecisionBreakdown,
   ErrorResponse,
+  GetCreativeChartParams,
   GetDashboardChartsParams,
   GetDashboardSummaryParams,
   GetDecisionBreakdownParams,
@@ -553,6 +554,116 @@ export const useDeleteCreative = <
 > => {
   return useMutation(getDeleteCreativeMutationOptions(options));
 };
+
+/**
+ * @summary Sales over time for a creative (grouped by date, matched by name)
+ */
+export const getGetCreativeChartUrl = (
+  id: number,
+  params?: GetCreativeChartParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/creatives/${id}/chart?${stringifiedParams}`
+    : `/api/creatives/${id}/chart`;
+};
+
+export const getCreativeChart = async (
+  id: number,
+  params?: GetCreativeChartParams,
+  options?: RequestInit,
+): Promise<ChartDataPoint[]> => {
+  return customFetch<ChartDataPoint[]>(getGetCreativeChartUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCreativeChartQueryKey = (
+  id: number,
+  params?: GetCreativeChartParams,
+) => {
+  return [`/api/creatives/${id}/chart`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetCreativeChartQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCreativeChart>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  params?: GetCreativeChartParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreativeChart>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetCreativeChartQueryKey(id, params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCreativeChart>>
+  > = ({ signal }) =>
+    getCreativeChart(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCreativeChart>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCreativeChartQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCreativeChart>>
+>;
+export type GetCreativeChartQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Sales over time for a creative (grouped by date, matched by name)
+ */
+
+export function useGetCreativeChart<
+  TData = Awaited<ReturnType<typeof getCreativeChart>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  params?: GetCreativeChartParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getCreativeChart>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCreativeChartQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary AI analysis of a creative's performance
