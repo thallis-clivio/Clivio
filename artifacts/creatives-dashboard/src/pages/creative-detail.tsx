@@ -232,10 +232,6 @@ export default function CreativeDetail() {
                 </div>
                 <div className="h-px bg-border" />
                 <div>
-                  <div className="text-xs text-muted-foreground mb-0.5">CTR</div>
-                  <div className="text-base font-mono">{creative.ctr}%</div>
-                </div>
-                <div>
                   <div className="text-xs text-muted-foreground mb-0.5">Dias sem Venda</div>
                   <div className={`text-base font-mono font-semibold ${creative.daysWithoutSales >= 2 ? "text-red-400" : creative.daysWithoutSales === 1 ? "text-yellow-400" : "text-green-400"}`}>
                     {creative.daysWithoutSales}
