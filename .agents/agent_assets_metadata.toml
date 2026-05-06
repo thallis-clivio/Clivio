@@ -12,3 +12,9 @@ id = "wTKgvuD9D69mCK-FDHeV8"
 uri = "file://clivio-source.md"
 type = "text"
 title = "Clivio — Código Fonte Completo (.md)"
+
+[[outputs]]
+id = "R6s3qvv-PSXGyutE9-3pg"
+uri = "file://clivio-source.zip"
+type = "unspecified"
+title = "Clivio — Código Fonte (.zip)"
