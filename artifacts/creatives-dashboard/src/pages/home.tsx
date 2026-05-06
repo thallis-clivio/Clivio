@@ -206,7 +206,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <Card className="lg:col-span-2 border-border/50 bg-card/50">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base">Vendas Totais ao Longo do Tempo</CardTitle>
+              <CardTitle className="text-base">Vendas</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[280px] w-full">
