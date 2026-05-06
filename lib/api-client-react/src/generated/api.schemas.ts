@@ -33,6 +33,8 @@ export interface CreateCreativeBody {
   name: string;
   date: string;
   spend: number;
+  sales2m: number;
+  sales3m: number;
   sales5m: number;
   sales7m: number;
   sales9m: number;

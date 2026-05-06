@@ -186,6 +186,8 @@ export function withMetrics(c: typeof creativesTable.$inferSelect, rates: Commis
     name: c.name,
     date: c.date,
     spend: c.spend,
+    sales2m: c.sales2m,
+    sales3m: c.sales3m,
     sales5m: c.sales5m,
     sales7m: c.sales7m,
     sales9m: c.sales9m,

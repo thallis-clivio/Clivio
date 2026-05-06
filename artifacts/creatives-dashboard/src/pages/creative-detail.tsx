@@ -5,6 +5,7 @@ import {
   useGetCreativeChart, getGetCreativeChartQueryKey,
   getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
   getGetPerformanceSummaryQueryKey, getGetDashboardChartsQueryKey,
+  useGetCommissionSettings,
 } from "@workspace/api-client-react";
 import { useAuth, useUser } from "@clerk/react";
 import { Layout } from "@/components/layout";
@@ -133,6 +134,8 @@ export default function CreativeDetail() {
   const { data: creative, isLoading } = useGetCreative(creativeId, {
     query: { queryKey: getGetCreativeQueryKey(creativeId), enabled: !!creativeId }
   });
+
+  const { data: commissionSettings } = useGetCommissionSettings();
 
   const chartParams = useMemo(() => ({ dateFilter: chartDateFilter }), [chartDateFilter]);
   const { data: chartData, isLoading: isChartLoading } = useGetCreativeChart(creativeId, chartParams, {
@@ -631,31 +634,49 @@ export default function CreativeDetail() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {(
-                  [
-                    { label: "Plano 5m", value: creative.sales5m, rate: "R$217" },
-                    { label: "Plano 7m", value: creative.sales7m, rate: "R$300" },
-                    { label: "Plano 9m", value: creative.sales9m, rate: "R$380" },
-                    { label: "Plano 12m", value: creative.sales12m, rate: "R$460" },
-                    { label: "Plano 16m", value: creative.sales16m, rate: "R$520" },
-                    { label: "Plano 20m", value: creative.sales20m, rate: "R$650" },
-                  ]
-                ).map(plan => (
-                  <div key={plan.label} className="bg-background p-4 rounded-lg border border-border">
-                    <div className="text-xs text-muted-foreground mb-2">{plan.label}</div>
-                    <div className="flex items-end justify-between">
-                      <div className="text-3xl font-bold tabular-nums">{plan.value}</div>
-                      <div className="text-xs text-muted-foreground pb-1">@ {plan.rate}</div>
-                    </div>
+              {(() => {
+                const r = commissionSettings ?? {
+                  commission2m: 161.38, commission3m: 187.38,
+                  commission5m: 241.38, commission7m: 295.38,
+                  commission9m: 376.38, commission12m: 484.38,
+                  commission16m: 562.38, commission20m: 1026.38,
+                };
+                const plans = [
+                  { label: "Plano 2m",  value: creative.sales2m,  rate: r.commission2m  },
+                  { label: "Plano 3m",  value: creative.sales3m,  rate: r.commission3m  },
+                  { label: "Plano 5m",  value: creative.sales5m,  rate: r.commission5m  },
+                  { label: "Plano 7m",  value: creative.sales7m,  rate: r.commission7m  },
+                  { label: "Plano 9m",  value: creative.sales9m,  rate: r.commission9m  },
+                  { label: "Plano 12m", value: creative.sales12m, rate: r.commission12m },
+                  { label: "Plano 16m", value: creative.sales16m, rate: r.commission16m },
+                  { label: "Plano 20m", value: creative.sales20m, rate: r.commission20m },
+                ];
+                return (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {plans.map(plan => (
+                      <div key={plan.label} className={`bg-background p-4 rounded-lg border ${plan.value > 0 ? "border-primary/30" : "border-border"}`}>
+                        <div className="text-xs text-muted-foreground mb-2">{plan.label}</div>
+                        <div className="flex items-end justify-between">
+                          <div className={`text-3xl font-bold tabular-nums ${plan.value > 0 ? "text-foreground" : "text-muted-foreground/50"}`}>{plan.value}</div>
+                          <div className="text-xs text-muted-foreground pb-1">@ {formatCurrency(plan.rate)}</div>
+                        </div>
+                        {plan.value > 0 && (
+                          <div className="text-xs text-primary/80 font-medium mt-1">{formatCurrency(plan.value * plan.rate)}</div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                );
+              })()}
 
               <div className="mt-6 p-4 rounded-lg border border-border bg-background/50">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">Total de Vendas</span>
                   <span className="text-xl font-bold tabular-nums">{creative.totalSales}</span>
+                </div>
+                <div className="flex items-center justify-between mt-2">
+                  <span className="text-sm text-muted-foreground">Comissão Front Total</span>
+                  <span className="text-xl font-bold tabular-nums text-primary">{formatCurrency(creative.commission)}</span>
                 </div>
                 <div className="flex items-center justify-between mt-2">
                   <span className="text-sm text-muted-foreground">CPA (Custo por Aquisição)</span>

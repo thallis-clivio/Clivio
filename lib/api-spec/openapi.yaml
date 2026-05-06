@@ -522,6 +522,10 @@ components:
           type: string
         spend:
           type: number
+        sales2m:
+          type: integer
+        sales3m:
+          type: integer
         sales5m:
           type: integer
         sales7m:
@@ -540,6 +544,8 @@ components:
         - name
         - date
         - spend
+        - sales2m
+        - sales3m
         - sales5m
         - sales7m
         - sales9m

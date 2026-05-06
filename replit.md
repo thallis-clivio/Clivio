@@ -48,6 +48,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - AI analysis via Claude (`claude-sonnet-4-6`) — `POST /api/creatives/:id/analyze` streams SSE from Anthropic via Replit AI Integrations (`AI_INTEGRATIONS_ANTHROPIC_BASE_URL` + `AI_INTEGRATIONS_ANTHROPIC_API_KEY` auto-provisioned). Frontend uses fetch + ReadableStream; `ClaudeMarkdown` renders **bold** headers and bullet points inline. No conversations DB needed (one-shot analysis).
 - Orval `schemas` option removed from zod config to prevent duplicate type exports; `lib/api-zod/src/index.ts` must only export `./generated/api`
 - **LTV tracking**: `ltvCommission real NOT NULL DEFAULT 0` on creativesTable + `product_settings` table (userId, mainProductName). Payt webhook: if product name doesn't contain `mainProductName` → LTV sale (adds commission to `ltvCommission`, skips `lastSaleAt`/`salesXm`). GET/PUT `/api/settings/products` endpoint. Simulate endpoint accepts `isLtv: boolean`. ROAS is always front-only.
+- **sales2m/sales3m**: Both are in DB and now in OpenAPI spec + `withMetrics()` return. All 8 plans (2m–20m) show in creative-detail "Vendas por Plano" with real rates from `useGetCommissionSettings` (fallback to defaults). Subtotal shown per plan when count > 0.
 
 ## Product
 

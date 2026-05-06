@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useEffect } from "react";
 import { FilePen, TrendingUp } from "lucide-react";
 
-const PLANS = ["5m", "7m", "9m", "12m", "16m", "20m"] as const;
+const PLANS = ["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"] as const;
 type Plan = typeof PLANS[number];
 
 const createSchema = z.object({
@@ -27,6 +27,8 @@ const editSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   date: z.string().min(1, "Data é obrigatória"),
   spend: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales2m:  z.coerce.number().min(0, "Deve ser >= 0"),
+  sales3m:  z.coerce.number().min(0, "Deve ser >= 0"),
   sales5m:  z.coerce.number().min(0, "Deve ser >= 0"),
   sales7m:  z.coerce.number().min(0, "Deve ser >= 0"),
   sales9m:  z.coerce.number().min(0, "Deve ser >= 0"),
@@ -60,6 +62,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
     defaultValues: {
       name: "", date: today,
       spend: 0,
+      sales2m: 0, sales3m: 0,
       sales5m: 0, sales7m: 0, sales9m: 0,
       sales12m: 0, sales16m: 0, sales20m: 0,
     },
@@ -71,6 +74,8 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         name: initialData.name,
         date: initialData.date,
         spend: initialData.spend,
+        sales2m:  initialData.sales2m,
+        sales3m:  initialData.sales3m,
         sales5m:  initialData.sales5m,
         sales7m:  initialData.sales7m,
         sales9m:  initialData.sales9m,
@@ -98,6 +103,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         data: {
           ...values,
           spend: 0,
+          sales2m: 0, sales3m: 0,
           sales5m: 0, sales7m: 0, sales9m: 0,
           sales12m: 0, sales16m: 0, sales20m: 0,
         },
