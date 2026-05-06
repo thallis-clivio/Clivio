@@ -419,7 +419,7 @@ components:
               type: number
             predictabilityLabel:
               type: string
-              enum: [ALTA PREVISIBILIDADE, MÉDIA PREVISIBILIDADE, BAIXA PREVISIBILIDADE]
+              enum: [EXCELENTE, BOM, RUIM]
             decision:
               type: string
               enum: [ESCALAR, MONITORAR, PAUSAR]

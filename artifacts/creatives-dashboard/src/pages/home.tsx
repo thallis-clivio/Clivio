@@ -57,15 +57,15 @@ function getPausarLabel(reason?: string | null) {
 }
 
 function getPredictabilityColor(label: string) {
-  if (label === "ALTA PREVISIBILIDADE") return "bg-green-500/20 text-green-400 border-green-500/30";
-  if (label === "MÉDIA PREVISIBILIDADE") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+  if (label === "EXCELENTE") return "bg-green-500/20 text-green-400 border-green-500/30";
+  if (label === "BOM") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
   return "bg-red-500/20 text-red-400 border-red-500/30";
 }
 
 function getPredictabilityShort(label: string) {
-  if (label === "ALTA PREVISIBILIDADE") return "Alta";
-  if (label === "MÉDIA PREVISIBILIDADE") return "Média";
-  return "Baixa";
+  if (label === "EXCELENTE") return "Excelente";
+  if (label === "BOM") return "Bom";
+  return "Ruim";
 }
 
 function getCpaColor(cpa: number, totalSales: number) {

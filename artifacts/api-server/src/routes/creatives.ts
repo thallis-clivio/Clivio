@@ -58,42 +58,39 @@ function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): 
   return { decision: "PAUSAR", monitorarReason: null, pausarReason: "prejuizo" };
 }
 
+// Desempenho score — regra 7-3-G:
+// ROAS >= 2 sempre bom (modelo x1, vendedor faz upsell no WhatsApp)
+// Limiar de consistência em 3 dias (1-2 dias ruins fazem parte do game)
 function computePredictability(
   roas: number,
-  cpa: number,
+  _cpa: number,
   daysWithoutSales: number,
   totalSales: number
-): { score: number; label: "ALTA PREVISIBILIDADE" | "MÉDIA PREVISIBILIDADE" | "BAIXA PREVISIBILIDADE" } {
-  // Consistency component (0–40 pts)
-  let consistencyScore = 0;
-  if (daysWithoutSales === 0 && totalSales > 0) consistencyScore = 40;
-  else if (daysWithoutSales === 1 && totalSales > 0) consistencyScore = 20;
-  else if (daysWithoutSales === 0 && totalSales === 0) consistencyScore = 15;
-  else consistencyScore = 0;
+): { score: number; label: "EXCELENTE" | "BOM" | "RUIM" } {
+  // Sem vendas ainda → RUIM
+  if (totalSales === 0) return { score: 0, label: "RUIM" };
 
-  // ROAS quality component (0–35 pts)
+  // ROAS component (0–60 pts) — principal driver no modelo x1
   let roasScore = 0;
-  if (roas >= 3) roasScore = 35;
-  else if (roas >= 2.5) roasScore = 30;
-  else if (roas >= 2) roasScore = 25;
-  else if (roas >= 1.5) roasScore = 15;
-  else if (roas >= 1) roasScore = 8;
+  if (roas >= 3) roasScore = 60;
+  else if (roas >= 2) roasScore = 50;
+  else if (roas >= 1.5) roasScore = 30;
+  else if (roas >= 1) roasScore = 15;
   else roasScore = 0;
 
-  // CPA efficiency component (0–25 pts)
-  let cpaScore = 0;
-  if (totalSales === 0) cpaScore = 0;
-  else if (cpa < 100) cpaScore = 25;
-  else if (cpa < 200) cpaScore = 20;
-  else if (cpa < 300) cpaScore = 14;
-  else if (cpa < 450) cpaScore = 7;
-  else cpaScore = 0;
+  // Consistência (0–40 pts) — regra dos 3 dias, 1-2 dias sem venda = normal
+  let consistencyScore = 0;
+  if (daysWithoutSales === 0) consistencyScore = 40;
+  else if (daysWithoutSales === 1) consistencyScore = 35;
+  else if (daysWithoutSales === 2) consistencyScore = 20;
+  else consistencyScore = 0; // 3+ dias = sinal de alerta
 
-  const score = Math.min(100, Math.round(consistencyScore + roasScore + cpaScore));
-  const label = score > 80 ? "ALTA PREVISIBILIDADE"
-    : score >= 50 ? "MÉDIA PREVISIBILIDADE"
-    : "BAIXA PREVISIBILIDADE";
+  const score = Math.min(100, roasScore + consistencyScore);
 
+  // ROAS < 1 = prejuízo, sempre RUIM independente de consistência
+  if (roas < 1) return { score: Math.min(score, 25), label: "RUIM" };
+
+  const label = score >= 70 ? "EXCELENTE" : score >= 40 ? "BOM" : "RUIM";
   return { score, label };
 }
 

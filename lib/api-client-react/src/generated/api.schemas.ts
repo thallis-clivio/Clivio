@@ -31,9 +31,9 @@ export type CreativeWithMetricsPredictabilityLabel =
   (typeof CreativeWithMetricsPredictabilityLabel)[keyof typeof CreativeWithMetricsPredictabilityLabel];
 
 export const CreativeWithMetricsPredictabilityLabel = {
-  ALTA_PREVISIBILIDADE: "ALTA PREVISIBILIDADE",
-  MÉDIA_PREVISIBILIDADE: "MÉDIA PREVISIBILIDADE",
-  BAIXA_PREVISIBILIDADE: "BAIXA PREVISIBILIDADE",
+  EXCELENTE: "EXCELENTE",
+  BOM: "BOM",
+  RUIM: "RUIM",
 } as const;
 
 export type CreativeWithMetricsDecision =

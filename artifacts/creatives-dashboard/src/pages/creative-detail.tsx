@@ -52,8 +52,8 @@ function getPausarLabel(reason?: string | null) {
 }
 
 function getPredictabilityColor(label: string) {
-  if (label === "ALTA PREVISIBILIDADE") return "bg-green-500/20 text-green-400 border-green-500/30";
-  if (label === "MÉDIA PREVISIBILIDADE") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+  if (label === "EXCELENTE") return "bg-green-500/20 text-green-400 border-green-500/30";
+  if (label === "BOM") return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
   return "bg-red-500/20 text-red-400 border-red-500/30";
 }
 
@@ -305,7 +305,7 @@ export default function CreativeDetail() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                   <Gauge className="w-3.5 h-3.5" />
-                  Previsibilidade
+                  Desempenho
                 </CardTitle>
               </CardHeader>
               <CardContent>
