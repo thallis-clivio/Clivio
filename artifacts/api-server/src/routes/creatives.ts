@@ -11,6 +11,7 @@ import {
   AnalyzeCreativeParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/requireAuth";
+import { anthropic } from "@workspace/integrations-anthropic-ai";
 
 const router = Router();
 
@@ -432,7 +433,7 @@ function buildSalesBreakdown(row: typeof creativesTable.$inferSelect, rates: Com
   };
 }
 
-// POST /creatives/:id/analyze
+// POST /creatives/:id/analyze  — streaming SSE via Claude
 router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
   const parseResult = AnalyzeCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) { res.status(400).json({ error: "ID inválido" }); return; }
@@ -445,67 +446,71 @@ router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
 
   const rates = await getCommissionRates(userId);
   const m = withMetrics(row, rates);
-  const { decision, roas, cpa, commission, spend, ctr, totalSales, daysWithoutSales, predictabilityScore, predictabilityLabel } = m;
+  const { decision, roas, cpa, commission, spend, totalSales, daysWithoutSales, predictabilityScore, predictabilityLabel, monitorarReason, pausarReason } = m;
+  const { text: salesBreakdown } = buildSalesBreakdown(row, rates);
 
-  const { text: breakdownText } = buildSalesBreakdown(row, rates);
+  const decisionLabel = decision === "ESCALAR" ? "ESCALAR"
+    : decision === "MONITORAR" ? `MONITORAR (${monitorarReason === "decaindo" ? "em queda" : "lucrativo"})`
+    : `PAUSAR (${pausarReason === "semVendas" ? "sem vendas" : "prejuízo"})`;
 
-  // Verified math strings
-  const commissionCalc = totalSales > 0
-    ? `Comissão: ${breakdownText} → Total ${fmtBRL(commission)}`
-    : "Comissão: R$0,00 (sem vendas)";
-  const roasCalc = `ROAS = ${fmtBRL(commission)} ÷ ${fmtBRL(spend)} = ${roas.toFixed(2)}x`;
-  const cpaCalc = totalSales > 0
-    ? `CPA = ${fmtBRL(spend)} ÷ ${totalSales} venda(s) = ${fmtBRL(cpa)}`
-    : "CPA = incalculável (sem vendas)";
+  const prompt = `Você é um analista sênior de mídia paga especializado em campanhas CTWA (Click-to-WhatsApp) no Meta Ads para o mercado brasileiro, com foco em produtos de assinatura vendidos via comissão de afiliado.
 
-  const prevText = predictabilityScore > 80
-    ? `Previsibilidade ${predictabilityScore}/100 — alta confiança para escalar.`
-    : predictabilityScore >= 50
-    ? `Previsibilidade moderada (${predictabilityScore}/100) — monitore antes de aumentar orçamento.`
-    : `Previsibilidade baixa (${predictabilityScore}/100) — padrão de conversões instável.`;
+## Dados do Criativo
+- Nome: "${row.name}"
+- Data de criação: ${row.date}
+- Decisão do motor automático: **${decisionLabel}**
+- Score de desempenho: ${predictabilityScore}/100 (${predictabilityLabel})
 
-  const cpaQual = totalSales === 0 ? ""
-    : cpa < 200 ? `CPA excelente (${fmtBRL(cpa)}) — custo de aquisição muito eficiente.`
-    : cpa < 350 ? `CPA aceitável (${fmtBRL(cpa)}) — há espaço para otimizar.`
-    : `CPA elevado (${fmtBRL(cpa)}) — margem comprimida.`;
+## Métricas Financeiras
+- Investimento total: ${fmtBRL(spend)}
+- Comissão gerada: ${fmtBRL(commission)}
+- ROAS: ${roas.toFixed(2)}x  ← referência: ≥2x escala, <1x prejuízo
+- CPA: ${totalSales > 0 ? fmtBRL(cpa) : "—"}  ← referência: <R$200 excelente, >R$350 crítico
+- Total de vendas: ${totalSales}
+- Dias consecutivos sem venda: ${daysWithoutSales}
 
-  const { monitorarReason } = m;
-  let explanation = "";
-  let nextAction = "";
+## Distribuição de Vendas por Plano
+${salesBreakdown}
 
-  switch (decision) {
-    case "ESCALAR":
-      explanation = `"${row.name}" está com desempenho excepcional.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
-      nextAction = `Aumente o orçamento em 20–30% e monitore as próximas 48h. Considere duplicar este criativo para novos públicos enquanto o original continua escalando.`;
-      break;
-    case "MONITORAR":
-      if (monitorarReason === "decaindo") {
-        explanation = `"${row.name}" era um criativo forte, mas está sem conversões há ${daysWithoutSales} dia(s) — sinal de queda.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
-        nextAction = `Não aumente o orçamento agora. Monitore as próximas 24h. Se o dia seguinte também não converter, pause. Verifique segmentação, frequência e fadiga do criativo.`;
-      } else {
-        explanation = `"${row.name}" está operando no positivo, mas abaixo do limiar de escala (ROAS mínimo 2x).\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
-        nextAction = `Mantenha o orçamento atual e observe por mais 48h. Se o ROAS ultrapassar 2x sem interrupção de conversões, escale. Teste variações de copy ou público para destravar o potencial.`;
+## Tarefa
+Analise este criativo com objetividade e precisão. Estruture a resposta em exatamente três seções:
+
+**1. Diagnóstico**
+Em 2-3 frases diretas, descreva o estado atual do criativo com base nos números reais acima.
+
+**2. Pontos críticos**
+Liste até 3 fatores que explicam o desempenho (positivos e/ou negativos). Use dados concretos.
+
+**3. Próximos passos**
+Indique 1-2 ações para as próximas 24-48h com justificativa baseada nos dados. Seja específico.
+
+Regras: use os números reais da análise, escreva em português brasileiro, seja direto e sem floreios.`;
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+
+  try {
+    const stream = anthropic.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: 8192,
+      messages: [{ role: "user", content: prompt }],
+    });
+
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        res.write(`data: ${JSON.stringify({ content: event.delta.text })}\n\n`);
       }
-      break;
-    case "PAUSAR":
-    default:
-      if (daysWithoutSales >= 2) {
-        explanation = `"${row.name}" está sem conversões há ${daysWithoutSales} dias consecutivos — regra automática de parada ativada.\n\n${commissionCalc}\n${roasCalc}\n\n${prevText}`;
-        nextAction = `Pause imediatamente. Analise os últimos públicos que converteram. Reformule o criativo com novo hook e relance para lookalike frio.`;
-      } else {
-        explanation = `"${row.name}" está gerando prejuízo — comissão abaixo do investimento.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
-        nextAction = `Pause imediatamente para estancar o prejuízo. Faça post-mortem: hook fraco? Público errado? Oferta desalinhada? Registre os aprendizados e relance com ângulo completamente diferente.`;
-      }
-      break;
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+  } catch (err) {
+    req.log.error({ err }, "Claude analysis failed");
+    res.write(`data: ${JSON.stringify({ error: "Falha ao conectar com Claude. Tente novamente." })}\n\n`);
   }
 
-  res.json({
-    creativeId: row.id,
-    decision,
-    explanation,
-    nextAction,
-    metrics: { roas, commission, spend, cpa, ctr, totalSales, predictabilityScore, predictabilityLabel },
-  });
+  res.end();
 });
 
 export { filterByDateRange, computeCommission, computeTotalSales, generateSyntheticHistory };

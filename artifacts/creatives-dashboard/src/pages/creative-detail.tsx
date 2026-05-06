@@ -1,16 +1,17 @@
 import { useParams, Link, useLocation } from "wouter";
 import {
   useGetCreative, getGetCreativeQueryKey,
-  useDeleteCreative, useAnalyzeCreative,
+  useDeleteCreative,
   useGetCreativeChart, getGetCreativeChartQueryKey,
   getListCreativesQueryKey, getGetDashboardSummaryQueryKey,
   getGetPerformanceSummaryQueryKey, getGetDashboardChartsQueryKey,
 } from "@workspace/api-client-react";
+import { useAuth } from "@clerk/react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -25,6 +26,46 @@ import {
 } from "recharts";
 
 type DateFilter = "all" | "daily" | "weekly" | "monthly";
+
+function ClaudeMarkdown({ text }: { text: string }) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-2 text-sm leading-relaxed">
+      {lines.map((line, i) => {
+        if (!line.trim()) return <div key={i} className="h-1" />;
+        // Bold headers like **1. Diagnóstico**
+        const boldMatch = line.match(/^\*\*(.+?)\*\*(.*)$/);
+        if (boldMatch) {
+          return (
+            <p key={i} className="font-semibold text-foreground mt-3 mb-1">
+              {boldMatch[1]}{boldMatch[2]}
+            </p>
+          );
+        }
+        // Bullet points
+        if (line.startsWith("- ") || line.startsWith("• ")) {
+          const content = line.replace(/^[-•]\s+/, "");
+          return (
+            <div key={i} className="flex gap-2 items-start">
+              <span className="text-primary mt-0.5 shrink-0">•</span>
+              <span className="text-foreground/90">{renderInlineBold(content)}</span>
+            </div>
+          );
+        }
+        return <p key={i} className="text-foreground/90">{renderInlineBold(line)}</p>;
+      })}
+    </div>
+  );
+}
+
+function renderInlineBold(text: string): React.ReactNode {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  if (parts.length === 1) return text;
+  return parts.map((part, i) =>
+    i % 2 === 1 ? <strong key={i} className="text-foreground font-semibold">{part}</strong> : part
+  );
+}
 
 const DATE_FILTER_LABELS: Record<DateFilter, string> = {
   all: "Tudo",
@@ -72,6 +113,10 @@ export default function CreativeDetail() {
   const queryClient = useQueryClient();
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [chartDateFilter, setChartDateFilter] = useState<DateFilter>("all");
+  const [claudeText, setClaudeText] = useState("");
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [claudeError, setClaudeError] = useState("");
+  const { getToken } = useAuth();
 
   const { data: creative, isLoading } = useGetCreative(creativeId, {
     query: { queryKey: getGetCreativeQueryKey(creativeId), enabled: !!creativeId }
@@ -88,7 +133,6 @@ export default function CreativeDetail() {
   }, [chartData]);
 
   const deleteCreative = useDeleteCreative();
-  const analyzeCreative = useAnalyzeCreative();
 
   function invalidateAll() {
     queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
@@ -110,11 +154,47 @@ export default function CreativeDetail() {
     }
   };
 
-  const handleAnalyze = () => {
-    analyzeCreative.mutate({ id: creativeId }, {
-      onSuccess: () => toast({ title: "Análise concluída" }),
-      onError: () => toast({ title: "Falha na análise", variant: "destructive" })
-    });
+  const handleAnalyze = async () => {
+    setClaudeText("");
+    setClaudeError("");
+    setIsStreaming(true);
+    try {
+      const token = await getToken();
+      const resp = await fetch(`${import.meta.env.BASE_URL}api/creatives/${creativeId}/analyze`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Accept": "text/event-stream",
+        },
+      });
+      if (!resp.ok || !resp.body) {
+        setClaudeError("Falha ao conectar com Claude. Tente novamente.");
+        setIsStreaming(false);
+        return;
+      }
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const payload = JSON.parse(line.slice(6));
+            if (payload.content) setClaudeText(prev => prev + payload.content);
+            if (payload.error) setClaudeError(payload.error);
+          } catch { /* ignore parse errors */ }
+        }
+      }
+    } catch {
+      setClaudeError("Falha na conexão. Verifique sua internet e tente novamente.");
+    } finally {
+      setIsStreaming(false);
+    }
   };
 
   if (isLoading) {
@@ -206,9 +286,11 @@ export default function CreativeDetail() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="outline" className="gap-2" onClick={handleAnalyze} disabled={analyzeCreative.isPending} data-testid="button-analyze">
-              <BrainCircuit className={`w-4 h-4 ${analyzeCreative.isPending ? "animate-pulse text-primary" : ""}`} />
-              {analyzeCreative.isPending ? "Analisando..." : "Analisar Criativo"}
+            <Button variant="outline" className="gap-2" onClick={handleAnalyze} disabled={isStreaming} data-testid="button-analyze">
+              {isStreaming
+                ? <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                : <BrainCircuit className="w-4 h-4" />}
+              {isStreaming ? "Analisando..." : "Analisar com Claude"}
             </Button>
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
               <DialogTrigger asChild>
@@ -225,32 +307,24 @@ export default function CreativeDetail() {
           </div>
         </div>
 
-        {/* AI Analysis */}
-        {analyzeCreative.data && (
-          <Alert className="border-primary bg-primary/5" data-testid="alert-analysis">
-            <BrainCircuit className="h-5 w-5 text-primary" />
-            <AlertTitle className="font-bold tracking-widest uppercase text-primary">Relatório de Inteligência</AlertTitle>
-            <AlertDescription className="mt-2 space-y-3">
-              <div className="space-y-2">
-                {analyzeCreative.data.explanation.split("\n\n").map((block, bi) => (
-                  <div key={bi}>
-                    {block.split("\n").map((line, li) => {
-                      const isMath = line.startsWith("Comissão:") || line.startsWith("ROAS") || line.startsWith("CPA");
-                      return isMath ? (
-                        <div key={li} className="font-mono text-xs bg-background/60 border border-border/60 rounded px-2 py-1 mt-1 text-foreground/90 leading-relaxed">
-                          {line}
-                        </div>
-                      ) : (
-                        <p key={li} className="text-foreground text-sm leading-relaxed">{line}</p>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-              <div className="bg-background/50 p-3 rounded-md border border-border">
-                <strong className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Ação Recomendada</strong>
-                <span className="text-sm">{analyzeCreative.data.nextAction}</span>
-              </div>
+        {/* Claude Analysis */}
+        {(claudeText || isStreaming || claudeError) && (
+          <Alert className="border-primary/40 bg-primary/5" data-testid="alert-analysis">
+            <div className="flex items-center gap-2 mb-1">
+              <BrainCircuit className={`h-5 w-5 text-primary ${isStreaming ? "animate-pulse" : ""}`} />
+              <AlertTitle className="font-bold tracking-widest uppercase text-primary m-0">
+                Análise Claude
+              </AlertTitle>
+              {isStreaming && (
+                <span className="ml-auto text-xs text-muted-foreground animate-pulse">gerando...</span>
+              )}
+            </div>
+            <AlertDescription className="mt-3">
+              {claudeError ? (
+                <p className="text-destructive text-sm">{claudeError}</p>
+              ) : (
+                <ClaudeMarkdown text={claudeText} />
+              )}
             </AlertDescription>
           </Alert>
         )}

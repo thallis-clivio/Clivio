@@ -43,7 +43,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - Decision logic: days>=3 → PAUSAR(semVendas); days>=2 AND ROAS<3.5 → PAUSAR(semVendas); days>=2 AND ROAS>=3.5 → MONITORAR(decaindo); ROAS>=2 AND days=0 → ESCALAR; ROAS>=1 → MONITORAR(lucrativo|decaindo); else PAUSAR(prejuizo)
 - `hookRate` column kept in DB (`real NOT NULL DEFAULT 0`), omitted from `insertCreativeSchema` and removed from API request body
 - Desempenho score (0–100): corte direto (days>=3 ou days>=2 com ROAS<3.5) → RUIM capped 30; else ROAS(0–60: >=3.5→60,>=3→55,>=2→50,>=1.5→30,>=1→15) + consistência(0–40: days=0→40,days=1→30,days=2(ROAS>=3.5)→8); ROAS<1 → RUIM cap 20; >=70→EXCELENTE, >=40→BOM, else RUIM
-- AI analysis is rule-based (no external LLM call) — fast, zero cost, no API key needed
+- AI analysis via Claude (`claude-sonnet-4-6`) — `POST /api/creatives/:id/analyze` streams SSE from Anthropic via Replit AI Integrations (`AI_INTEGRATIONS_ANTHROPIC_BASE_URL` + `AI_INTEGRATIONS_ANTHROPIC_API_KEY` auto-provisioned). Frontend uses fetch + ReadableStream; `ClaudeMarkdown` renders **bold** headers and bullet points inline. No conversations DB needed (one-shot analysis).
 - Orval `schemas` option removed from zod config to prevent duplicate type exports; `lib/api-zod/src/index.ts` must only export `./generated/api`
 
 ## Product
@@ -52,7 +52,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - **Sign-in** (`/sign-in`): Clerk-hosted, dark theme, "Entrar no Clivio"
 - **Sign-up** (`/sign-up`): Clerk-hosted, dark theme, "Criar conta no Clivio"
 - **Dashboard** (`/dashboard`): 5 KPI cards, date filter tabs (Hoje/Semana/Mês/Tudo), multi-metric chart, performance summary, creatives table with decisions
-- **Creative detail** (`/creatives/:id`): Full metrics breakdown, predictability bar, AI analysis
+- **Creative detail** (`/creatives/:id`): Full metrics breakdown, predictability bar, "Analisar com Claude" button streams real-time Claude analysis (Diagnóstico / Pontos críticos / Próximos passos)
 - Sidebar logout button + user email display
 - "Simular Venda" button in dashboard header (no auth required on `/api/webhooks/simulate`)
 - Payt postback at `/api/webhooks/payt` (unprotected, validates PAYT_INTEGRATION_KEY); utm_content supports `userId::creativeName` for per-user routing, falls back to global name search for legacy values
