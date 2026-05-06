@@ -38,7 +38,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 
 - **Auth**: Clerk with clerkProxyMiddleware mounted before body parsers in app.ts. `requireAuth` middleware on all creatives/dashboard routes; webhooks unprotected (Payt can't send session tokens)
 - **Per-user isolation**: `userId text NOT NULL DEFAULT ''` column on creativesTable; all DB queries filter by `eq(creativesTable.userId, userId)`. Webhooks find creatives by name across all users.
-- Commission computed server-side in BRL at 54% base Payt rate: 2m×R$161,38 / 3m×R$187,38 / 5m×R$241,38 / 7m×R$295,38 / 9m×R$376,38 / 12m×R$484,38 / 16m×R$562,38 / 20m×R$1026,38
+- Commission is **per-user configurable** via `commissionSettingsTable` (GET/PUT `/api/settings/commissions`). Defaults: 2m×R$161,38 / 3m×R$187,38 / 5m×R$241,38 / 7m×R$295,38 / 9m×R$376,38 / 12m×R$484,38 / 16m×R$562,38 / 20m×R$1026,38. `getCommissionRates(userId)` fetches from DB or returns defaults; passed to `withMetrics(row, rates)` and `buildSalesBreakdown(row, rates)` in every route.
 - ROAS = commission / spend; CPA = spend / totalSales; both computed at read time (not stored)
 - Decision logic: days>=3 → PAUSAR(semVendas); days>=2 AND ROAS<3.5 → PAUSAR(semVendas); days>=2 AND ROAS>=3.5 → MONITORAR(decaindo); ROAS>=2 AND days=0 → ESCALAR; ROAS>=1 → MONITORAR(lucrativo|decaindo); else PAUSAR(prejuizo)
 - `hookRate` column kept in DB (`real NOT NULL DEFAULT 0`), omitted from `insertCreativeSchema` and removed from API request body

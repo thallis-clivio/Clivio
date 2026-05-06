@@ -19,6 +19,7 @@ import type {
 import type {
   AnalysisResult,
   ChartDataPoint,
+  CommissionSettings,
   CreateCreativeBody,
   CreativeWithMetrics,
   DashboardSummary,
@@ -45,6 +46,167 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Get user commission rates
+ */
+export const getGetCommissionSettingsUrl = () => {
+  return `/api/settings/commissions`;
+};
+
+export const getCommissionSettings = async (
+  options?: RequestInit,
+): Promise<CommissionSettings> => {
+  return customFetch<CommissionSettings>(getGetCommissionSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetCommissionSettingsQueryKey = () => {
+  return [`/api/settings/commissions`] as const;
+};
+
+export const getGetCommissionSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getCommissionSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCommissionSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetCommissionSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getCommissionSettings>>
+  > = ({ signal }) => getCommissionSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getCommissionSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetCommissionSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getCommissionSettings>>
+>;
+export type GetCommissionSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get user commission rates
+ */
+
+export function useGetCommissionSettings<
+  TData = Awaited<ReturnType<typeof getCommissionSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getCommissionSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetCommissionSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save user commission rates
+ */
+export const getUpdateCommissionSettingsUrl = () => {
+  return `/api/settings/commissions`;
+};
+
+export const updateCommissionSettings = async (
+  commissionSettings: CommissionSettings,
+  options?: RequestInit,
+): Promise<CommissionSettings> => {
+  return customFetch<CommissionSettings>(getUpdateCommissionSettingsUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(commissionSettings),
+  });
+};
+
+export const getUpdateCommissionSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommissionSettings>>,
+    TError,
+    { data: BodyType<CommissionSettings> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateCommissionSettings>>,
+  TError,
+  { data: BodyType<CommissionSettings> },
+  TContext
+> => {
+  const mutationKey = ["updateCommissionSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateCommissionSettings>>,
+    { data: BodyType<CommissionSettings> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateCommissionSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateCommissionSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateCommissionSettings>>
+>;
+export type UpdateCommissionSettingsMutationBody = BodyType<CommissionSettings>;
+export type UpdateCommissionSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save user commission rates
+ */
+export const useUpdateCommissionSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateCommissionSettings>>,
+    TError,
+    { data: BodyType<CommissionSettings> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateCommissionSettings>>,
+  TError,
+  { data: BodyType<CommissionSettings> },
+  TContext
+> => {
+  return useMutation(getUpdateCommissionSettingsMutationOptions(options));
+};
 
 /**
  * Returns server health status

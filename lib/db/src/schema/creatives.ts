@@ -2,6 +2,20 @@ import { pgTable, serial, text, real, integer, timestamp } from "drizzle-orm/pg-
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
+export const commissionSettingsTable = pgTable("commission_settings", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  commission2m: real("commission_2m").notNull().default(161.38),
+  commission3m: real("commission_3m").notNull().default(187.38),
+  commission5m: real("commission_5m").notNull().default(241.38),
+  commission7m: real("commission_7m").notNull().default(295.38),
+  commission9m: real("commission_9m").notNull().default(376.38),
+  commission12m: real("commission_12m").notNull().default(484.38),
+  commission16m: real("commission_16m").notNull().default(562.38),
+  commission20m: real("commission_20m").notNull().default(1026.38),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const creativesTable = pgTable("creatives", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().default(""),

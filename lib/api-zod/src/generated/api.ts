@@ -8,6 +8,45 @@
 import * as zod from "zod";
 
 /**
+ * @summary Get user commission rates
+ */
+export const GetCommissionSettingsResponse = zod.object({
+  commission2m: zod.number(),
+  commission3m: zod.number(),
+  commission5m: zod.number(),
+  commission7m: zod.number(),
+  commission9m: zod.number(),
+  commission12m: zod.number(),
+  commission16m: zod.number(),
+  commission20m: zod.number(),
+});
+
+/**
+ * @summary Save user commission rates
+ */
+export const UpdateCommissionSettingsBody = zod.object({
+  commission2m: zod.number(),
+  commission3m: zod.number(),
+  commission5m: zod.number(),
+  commission7m: zod.number(),
+  commission9m: zod.number(),
+  commission12m: zod.number(),
+  commission16m: zod.number(),
+  commission20m: zod.number(),
+});
+
+export const UpdateCommissionSettingsResponse = zod.object({
+  commission2m: zod.number(),
+  commission3m: zod.number(),
+  commission5m: zod.number(),
+  commission7m: zod.number(),
+  commission9m: zod.number(),
+  commission12m: zod.number(),
+  commission16m: zod.number(),
+  commission20m: zod.number(),
+});
+
+/**
  * Returns server health status
  * @summary Health check
  */

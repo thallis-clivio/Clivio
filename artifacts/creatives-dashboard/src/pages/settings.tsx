@@ -1,21 +1,21 @@
-import { useState } from "react";
-import { useUser } from "@clerk/react";
+import { useState, useEffect } from "react";
+import { useUser, useAuth } from "@clerk/react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight, DollarSign, Loader2, CheckCircle2 } from "lucide-react";
 
 function CopyButton({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = () => {
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
-
   return (
     <button
       onClick={handleCopy}
@@ -50,14 +50,94 @@ function Step({ number, title, children }: { number: number; title: string; chil
   );
 }
 
+const PLANS = [
+  { key: "commission2m",  label: "2 meses",  default: 161.38 },
+  { key: "commission3m",  label: "3 meses",  default: 187.38 },
+  { key: "commission5m",  label: "5 meses",  default: 241.38 },
+  { key: "commission7m",  label: "7 meses",  default: 295.38 },
+  { key: "commission9m",  label: "9 meses",  default: 376.38 },
+  { key: "commission12m", label: "12 meses", default: 484.38 },
+  { key: "commission16m", label: "16 meses", default: 562.38 },
+  { key: "commission20m", label: "20 meses", default: 1026.38 },
+] as const;
+
+type CommissionKey = typeof PLANS[number]["key"];
+type Rates = Record<CommissionKey, string>;
+
+const DEFAULT_RATES: Rates = Object.fromEntries(
+  PLANS.map(p => [p.key, p.default.toFixed(2)])
+) as Rates;
+
 export default function Settings() {
   const { user } = useUser();
+  const { getToken } = useAuth();
 
   const origin = window.location.origin;
   const webhookUrl = `${origin}/api/webhooks/payt`;
   const userId = user?.id ?? "carregando...";
   const exampleCreative = "criativo-1";
   const utmExample = `${userId}::${exampleCreative}`;
+
+  const [rates, setRates] = useState<Rates>(DEFAULT_RATES);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${import.meta.env.BASE_URL}api/settings/commissions`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setRates(Object.fromEntries(
+            PLANS.map(p => [p.key, Number(data[p.key] ?? p.default).toFixed(2)])
+          ) as Rates);
+        }
+      } catch {
+        // mantém defaults
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [user, getToken]);
+
+  const handleChange = (key: CommissionKey, value: string) => {
+    setRates(prev => ({ ...prev, [key]: value }));
+    setSaved(false);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+    try {
+      const token = await getToken();
+      const body = Object.fromEntries(
+        PLANS.map(p => [p.key, parseFloat(rates[p.key]) || p.default])
+      );
+      const res = await fetch(`${import.meta.env.BASE_URL}api/settings/commissions`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setRates(Object.fromEntries(
+          PLANS.map(p => [p.key, Number(data[p.key]).toFixed(2)])
+        ) as Rates);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 3000);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <Layout>
@@ -66,6 +146,68 @@ export default function Settings() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
           <p className="text-sm text-muted-foreground mt-1">Integração com Payt e configuração de postback</p>
         </div>
+
+        {/* Commission Editor */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Meus Tickets de Comissão</CardTitle>
+            </div>
+            <CardDescription>
+              Defina quanto você recebe por plano. O Clivio usa esses valores para calcular ROAS e comissão dos seus criativos.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {loading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando seus valores...
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {PLANS.map(plan => (
+                    <div key={plan.key} className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">{plan.label}</Label>
+                      <div className="relative">
+                        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={rates[plan.key]}
+                          onChange={e => handleChange(plan.key, e.target.value)}
+                          className="pl-8 h-9 text-sm bg-muted/30 border-border focus:border-primary"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between pt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Valores em BRL. Alterações afetam ROAS e comissão de todos os criativos.
+                  </p>
+                  <Button
+                    onClick={handleSave}
+                    disabled={saving}
+                    size="sm"
+                    className="gap-2"
+                  >
+                    {saving ? (
+                      <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
+                    ) : saved ? (
+                      <><CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> Salvo!</>
+                    ) : (
+                      "Salvar configurações"
+                    )}
+                  </Button>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Webhook URL */}
         <Card className="border-border bg-card">
@@ -142,7 +284,6 @@ export default function Settings() {
               </Step>
             </div>
 
-            {/* Summary diagram */}
             <div className="mt-4 p-4 rounded-lg bg-muted/30 border border-border text-xs text-muted-foreground space-y-2">
               <p className="text-foreground font-medium text-xs uppercase tracking-wide mb-3">Fluxo resumido</p>
               <div className="flex flex-wrap items-center gap-2">
@@ -155,36 +296,6 @@ export default function Settings() {
                 <span className="px-2 py-1 bg-primary/20 border border-primary/30 rounded text-primary">Payt envia postback → Clivio atualiza o criativo</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Commission rates reference */}
-        <Card className="border-border bg-card">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Tabela de comissões (54% — base Payt)</CardTitle>
-            <CardDescription>Valores que o Clivio usa para calcular ROAS e comissão. Atualizado conforme sua tabela de afiliado.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {[
-                { plan: "2 meses", value: "R$ 161,38" },
-                { plan: "3 meses", value: "R$ 187,38" },
-                { plan: "5 meses", value: "R$ 241,38" },
-                { plan: "7 meses", value: "R$ 295,38" },
-                { plan: "9 meses", value: "R$ 376,38" },
-                { plan: "12 meses", value: "R$ 484,38" },
-                { plan: "16 meses", value: "R$ 562,38" },
-                { plan: "20 meses", value: "R$ 1.026,38" },
-              ].map(({ plan, value }) => (
-                <div key={plan} className="p-3 rounded-lg bg-muted/40 border border-border text-center">
-                  <p className="text-xs text-muted-foreground">{plan}</p>
-                  <p className="text-sm font-semibold text-foreground mt-0.5">{value}</p>
-                </div>
-              ))}
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              O plano é detectado automaticamente pelo nome do produto no postback (ex: "Rosa Oriental — 7 Meses" → plano 7m).
-            </p>
           </CardContent>
         </Card>
       </div>

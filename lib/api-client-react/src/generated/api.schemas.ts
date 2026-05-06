@@ -5,6 +5,17 @@
  * API specification for Creatives Performance Dashboard
  * OpenAPI spec version: 0.1.0
  */
+export interface CommissionSettings {
+  commission2m: number;
+  commission3m: number;
+  commission5m: number;
+  commission7m: number;
+  commission9m: number;
+  commission12m: number;
+  commission16m: number;
+  commission20m: number;
+}
+
 export interface HealthStatus {
   status: string;
 }

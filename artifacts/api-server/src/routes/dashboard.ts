@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { withMetrics, filterByDateRange, generateSyntheticHistory } from "./creatives";
+import { withMetrics, filterByDateRange, generateSyntheticHistory, getCommissionRates } from "./creatives";
 import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
@@ -19,7 +19,8 @@ router.get("/dashboard/summary", requireAuth, async (req, res) => {
     return;
   }
 
-  const results = filtered.map(withMetrics);
+  const rates = await getCommissionRates(userId);
+  const results = filtered.map(r => withMetrics(r, rates));
   const totalSpend = results.reduce((s, c) => s + c.spend, 0);
   const totalCommission = results.reduce((s, c) => s + c.commission, 0);
   const totalSales = results.reduce((s, c) => s + c.totalSales, 0);
@@ -46,7 +47,8 @@ router.get("/dashboard/decision-breakdown", requireAuth, async (req, res) => {
   const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
-  const results = filtered.map(withMetrics);
+  const rates = await getCommissionRates(userId);
+  const results = filtered.map(r => withMetrics(r, rates));
 
   const breakdown = { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 };
   for (const c of results) breakdown[c.decision]++;
@@ -73,7 +75,8 @@ router.get("/dashboard/performance-summary", requireAuth, async (req, res) => {
     return;
   }
 
-  const results = filtered.map(withMetrics);
+  const rates = await getCommissionRates(userId);
+  const results = filtered.map(r => withMetrics(r, rates));
 
   const bestRoasCreative = results.reduce((best, c) => c.roas > best.roas ? c : best);
   const withSales = results.filter(c => c.totalSales > 0);
@@ -103,7 +106,8 @@ router.get("/dashboard/charts", requireAuth, async (req, res) => {
   const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   // For the dashboard chart always use all creatives (date filter just changes the window)
-  const results = rows.map(withMetrics);
+  const rates = await getCommissionRates(userId);
+  const results = rows.map(r => withMetrics(r, rates));
 
   const byDate: Record<string, { totalSales: number }> = {};
 

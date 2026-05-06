@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, creativesTable } from "@workspace/db";
+import { db, creativesTable, commissionSettingsTable } from "@workspace/db";
 import { eq, and } from "drizzle-orm";
 import {
   CreateCreativeBody,
@@ -14,26 +14,56 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
-// Commission values (BRL) at 54% base rate — Rosa Oriental / Payt affiliate table
-const COMMISSION_RATES = {
-  sales2m: 161.38,
-  sales3m: 187.38,
-  sales5m: 241.38,
-  sales7m: 295.38,
-  sales9m: 376.38,
-  sales12m: 484.38,
-  sales16m: 562.38,
-  sales20m: 1026.38,
-} as const;
+// CommissionRates — configurável por usuário via /settings/commissions
+export type CommissionRates = {
+  commission2m: number;
+  commission3m: number;
+  commission5m: number;
+  commission7m: number;
+  commission9m: number;
+  commission12m: number;
+  commission16m: number;
+  commission20m: number;
+};
 
-function computeCommission(c: {
-  sales2m: number; sales3m: number; sales5m: number; sales7m: number;
-  sales9m: number; sales12m: number; sales16m: number; sales20m: number;
-}): number {
+export const DEFAULT_RATES: CommissionRates = {
+  commission2m: 161.38,
+  commission3m: 187.38,
+  commission5m: 241.38,
+  commission7m: 295.38,
+  commission9m: 376.38,
+  commission12m: 484.38,
+  commission16m: 562.38,
+  commission20m: 1026.38,
+};
+
+export async function getCommissionRates(userId: string): Promise<CommissionRates> {
+  const [row] = await db.select().from(commissionSettingsTable).where(
+    eq(commissionSettingsTable.userId, userId)
+  );
+  if (!row) return DEFAULT_RATES;
+  return {
+    commission2m: row.commission2m,
+    commission3m: row.commission3m,
+    commission5m: row.commission5m,
+    commission7m: row.commission7m,
+    commission9m: row.commission9m,
+    commission12m: row.commission12m,
+    commission16m: row.commission16m,
+    commission20m: row.commission20m,
+  };
+}
+
+function computeCommission(
+  c: { sales2m: number; sales3m: number; sales5m: number; sales7m: number;
+       sales9m: number; sales12m: number; sales16m: number; sales20m: number },
+  rates: CommissionRates
+): number {
   return (
-    c.sales2m * 161.38 + c.sales3m * 187.38 +
-    c.sales5m * 241.38 + c.sales7m * 295.38 + c.sales9m * 376.38 +
-    c.sales12m * 484.38 + c.sales16m * 562.38 + c.sales20m * 1026.38
+    c.sales2m * rates.commission2m + c.sales3m * rates.commission3m +
+    c.sales5m * rates.commission5m + c.sales7m * rates.commission7m +
+    c.sales9m * rates.commission9m + c.sales12m * rates.commission12m +
+    c.sales16m * rates.commission16m + c.sales20m * rates.commission20m
   );
 }
 
@@ -127,8 +157,8 @@ function filterByDateRange(date: string, dateFilter?: string): boolean {
   return true;
 }
 
-function withMetrics(c: typeof creativesTable.$inferSelect) {
-  const commission = computeCommission(c);
+export function withMetrics(c: typeof creativesTable.$inferSelect, rates: CommissionRates = DEFAULT_RATES) {
+  const commission = computeCommission(c, rates);
   const totalSales = computeTotalSales(c);
   const roas = c.spend > 0 ? Math.round((commission / c.spend) * 100) / 100 : 0;
   const cpa = totalSales > 0 ? Math.round((c.spend / totalSales) * 100) / 100 : 0;
@@ -169,10 +199,13 @@ router.get("/creatives", requireAuth, async (req, res) => {
 
   const userId = (req as typeof req & { userId: string }).userId;
   const { decision, sortBy, sortOrder, dateFilter } = parseResult.data;
-  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
+  const [rows, rates] = await Promise.all([
+    db.select().from(creativesTable).where(eq(creativesTable.userId, userId)),
+    getCommissionRates(userId),
+  ]);
   let results = rows
     .filter(r => filterByDateRange(r.date, dateFilter))
-    .map(withMetrics);
+    .map(r => withMetrics(r, rates));
 
   if (decision) results = results.filter(c => c.decision === decision);
 
@@ -215,7 +248,8 @@ router.post("/creatives", requireAuth, async (req, res) => {
     daysWithoutSales: data.daysWithoutSales,
   }).returning();
 
-  res.status(201).json(withMetrics(created));
+  const rates = await getCommissionRates(userId);
+  res.status(201).json(withMetrics(created, rates));
 });
 
 // GET /creatives/:id
@@ -229,7 +263,8 @@ router.get("/creatives/:id", requireAuth, async (req, res) => {
   );
   if (!row) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
-  res.json(withMetrics(row));
+  const rates = await getCommissionRates(userId);
+  res.json(withMetrics(row, rates));
 });
 
 // PUT /creatives/:id
@@ -257,7 +292,8 @@ router.put("/creatives/:id", requireAuth, async (req, res) => {
   }).where(and(eq(creativesTable.id, paramsResult.data.id), eq(creativesTable.userId, userId))).returning();
 
   if (!updated) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
-  res.json(withMetrics(updated));
+  const rates = await getCommissionRates(userId);
+  res.json(withMetrics(updated, rates));
 });
 
 // DELETE /creatives/:id
@@ -347,7 +383,8 @@ router.get("/creatives/:id/chart", requireAuth, async (req, res) => {
 
   // If only 1 data point exists, generate a 7-day synthetic narrative history
   if (chartData.length <= 1) {
-    const m = withMetrics(base);
+    const rates = await getCommissionRates(userId);
+    const m = withMetrics(base, rates);
     res.json(generateSyntheticHistory(base.date, m.decision, m.monitorarReason, base.daysWithoutSales, m.totalSales));
     return;
   }
@@ -355,28 +392,32 @@ router.get("/creatives/:id/chart", requireAuth, async (req, res) => {
   res.json(chartData);
 });
 
-const PLAN_LABELS: { key: keyof typeof COMMISSION_RATES; label: string; rate: number }[] = [
-  { key: "sales5m",  label: "5 meses",  rate: 217 },
-  { key: "sales7m",  label: "7 meses",  rate: 300 },
-  { key: "sales9m",  label: "9 meses",  rate: 380 },
-  { key: "sales12m", label: "12 meses", rate: 460 },
-  { key: "sales16m", label: "16 meses", rate: 520 },
-  { key: "sales20m", label: "20 meses", rate: 650 },
+type PlanLabel = { key: keyof typeof creativesTable.$inferSelect; label: string; rateKey: keyof CommissionRates };
+const PLAN_LABELS: PlanLabel[] = [
+  { key: "sales2m",  label: "2 meses",  rateKey: "commission2m" },
+  { key: "sales3m",  label: "3 meses",  rateKey: "commission3m" },
+  { key: "sales5m",  label: "5 meses",  rateKey: "commission5m" },
+  { key: "sales7m",  label: "7 meses",  rateKey: "commission7m" },
+  { key: "sales9m",  label: "9 meses",  rateKey: "commission9m" },
+  { key: "sales12m", label: "12 meses", rateKey: "commission12m" },
+  { key: "sales16m", label: "16 meses", rateKey: "commission16m" },
+  { key: "sales20m", label: "20 meses", rateKey: "commission20m" },
 ];
 
 function fmtBRL(v: number) {
   return `R$${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-function buildSalesBreakdown(row: typeof creativesTable.$inferSelect): { text: string; commission: number } {
+function buildSalesBreakdown(row: typeof creativesTable.$inferSelect, rates: CommissionRates): { text: string; commission: number } {
   const lines: string[] = [];
   let total = 0;
   for (const p of PLAN_LABELS) {
     const qty = row[p.key] as number;
     if (qty > 0) {
-      const sub = qty * p.rate;
+      const rate = rates[p.rateKey];
+      const sub = qty * rate;
       total += sub;
-      lines.push(`${qty}× Plano ${p.label} (${fmtBRL(p.rate)}) = ${fmtBRL(sub)}`);
+      lines.push(`${qty}× Plano ${p.label} (${fmtBRL(rate)}) = ${fmtBRL(sub)}`);
     }
   }
   return {
@@ -396,10 +437,11 @@ router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
   );
   if (!row) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
-  const m = withMetrics(row);
+  const rates = await getCommissionRates(userId);
+  const m = withMetrics(row, rates);
   const { decision, roas, cpa, commission, spend, ctr, totalSales, daysWithoutSales, predictabilityScore, predictabilityLabel } = m;
 
-  const { text: breakdownText } = buildSalesBreakdown(row);
+  const { text: breakdownText } = buildSalesBreakdown(row, rates);
 
   // Verified math strings
   const commissionCalc = totalSales > 0
@@ -460,5 +502,5 @@ router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
   });
 });
 
-export { withMetrics, filterByDateRange, computeCommission, computeTotalSales, generateSyntheticHistory };
+export { filterByDateRange, computeCommission, computeTotalSales, generateSyntheticHistory };
 export default router;

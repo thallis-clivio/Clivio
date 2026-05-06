@@ -16,7 +16,39 @@ tags:
     description: Dashboard summary data
   - name: webhooks
     description: Inbound webhook receivers
+  - name: settings
+    description: User settings and configuration
 paths:
+  /settings/commissions:
+    get:
+      operationId: getCommissionSettings
+      tags: [settings]
+      summary: Get user commission rates
+      responses:
+        "200":
+          description: User commission rates (defaults if not configured)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommissionSettings"
+    put:
+      operationId: updateCommissionSettings
+      tags: [settings]
+      summary: Save user commission rates
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CommissionSettings"
+      responses:
+        "200":
+          description: Saved commission rates
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommissionSettings"
+
   /healthz:
     get:
       operationId: healthCheck
@@ -347,6 +379,35 @@ paths:
 
 components:
   schemas:
+    CommissionSettings:
+      type: object
+      properties:
+        commission2m:
+          type: number
+        commission3m:
+          type: number
+        commission5m:
+          type: number
+        commission7m:
+          type: number
+        commission9m:
+          type: number
+        commission12m:
+          type: number
+        commission16m:
+          type: number
+        commission20m:
+          type: number
+      required:
+        - commission2m
+        - commission3m
+        - commission5m
+        - commission7m
+        - commission9m
+        - commission12m
+        - commission16m
+        - commission20m
+
     HealthStatus:
       type: object
       properties:
