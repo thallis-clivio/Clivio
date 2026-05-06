@@ -11,18 +11,18 @@ import { useEffect } from "react";
 import { CreativeWithMetrics } from "@workspace/api-client-react/src/generated/api.schemas";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  date: z.string().min(1, "Date is required"),
-  spend: z.coerce.number().min(0, "Must be >= 0"),
-  ctr: z.coerce.number().min(0, "Must be >= 0"),
-  hookRate: z.coerce.number().min(0, "Must be >= 0"),
-  daysWithoutSales: z.coerce.number().min(0, "Must be >= 0"),
-  sales5m: z.coerce.number().min(0, "Must be >= 0"),
-  sales7m: z.coerce.number().min(0, "Must be >= 0"),
-  sales9m: z.coerce.number().min(0, "Must be >= 0"),
-  sales12m: z.coerce.number().min(0, "Must be >= 0"),
-  sales16m: z.coerce.number().min(0, "Must be >= 0"),
-  sales20m: z.coerce.number().min(0, "Must be >= 0"),
+  name: z.string().min(1, "Nome é obrigatório"),
+  date: z.string().min(1, "Data é obrigatória"),
+  spend: z.coerce.number().min(0, "Deve ser >= 0"),
+  ctr: z.coerce.number().min(0, "Deve ser >= 0"),
+  hookRate: z.coerce.number().min(0, "Deve ser >= 0"),
+  daysWithoutSales: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales5m: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales7m: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales9m: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales12m: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales16m: z.coerce.number().min(0, "Deve ser >= 0"),
+  sales20m: z.coerce.number().min(0, "Deve ser >= 0"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -35,7 +35,7 @@ interface CreativeFormProps {
 export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -84,7 +84,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         { id: initialData.id, data: values },
         {
           onSuccess: () => {
-            toast({ title: "Creative updated successfully" });
+            toast({ title: "Criativo atualizado com sucesso" });
             queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetCreativeQueryKey(initialData.id) });
             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
@@ -92,7 +92,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             onSuccess?.();
           },
           onError: () => {
-            toast({ title: "Failed to update creative", variant: "destructive" });
+            toast({ title: "Erro ao atualizar criativo", variant: "destructive" });
           },
         }
       );
@@ -101,14 +101,14 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         { data: values },
         {
           onSuccess: () => {
-            toast({ title: "Creative created successfully" });
+            toast({ title: "Criativo criado com sucesso" });
             queryClient.invalidateQueries({ queryKey: getListCreativesQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
             queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
             onSuccess?.();
           },
           onError: () => {
-            toast({ title: "Failed to create creative", variant: "destructive" });
+            toast({ title: "Erro ao criar criativo", variant: "destructive" });
           },
         }
       );
@@ -124,9 +124,9 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>Nome do Criativo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Creative name" {...field} />
+                  <Input placeholder="Nome do criativo" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -137,7 +137,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             name="date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Date</FormLabel>
+                <FormLabel>Data</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -150,7 +150,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             name="spend"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Spend ($)</FormLabel>
+                <FormLabel>Gasto (R$)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -163,7 +163,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             name="daysWithoutSales"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Days w/o Sales</FormLabel>
+                <FormLabel>Dias sem Venda</FormLabel>
                 <FormControl>
                   <Input type="number" {...field} />
                 </FormControl>
@@ -189,7 +189,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             name="hookRate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Hook Rate (%)</FormLabel>
+                <FormLabel>Taxa de Hook (%)</FormLabel>
                 <FormControl>
                   <Input type="number" step="0.01" {...field} />
                 </FormControl>
@@ -198,16 +198,16 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             )}
           />
         </div>
-        
+
         <div className="border-t border-border pt-4">
-          <h3 className="text-sm font-medium mb-4 text-muted-foreground uppercase">Sales Counts</h3>
+          <h3 className="text-sm font-medium mb-4 text-muted-foreground uppercase">Vendas por Plano</h3>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <FormField
               control={form.control}
               name="sales5m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>5m Sales</FormLabel>
+                  <FormLabel>Vendas 5m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -220,7 +220,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
               name="sales7m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>7m Sales</FormLabel>
+                  <FormLabel>Vendas 7m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -233,7 +233,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
               name="sales9m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>9m Sales</FormLabel>
+                  <FormLabel>Vendas 9m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -246,7 +246,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
               name="sales12m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>12m Sales</FormLabel>
+                  <FormLabel>Vendas 12m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -259,7 +259,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
               name="sales16m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>16m Sales</FormLabel>
+                  <FormLabel>Vendas 16m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -272,7 +272,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
               name="sales20m"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>20m Sales</FormLabel>
+                  <FormLabel>Vendas 20m</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -285,7 +285,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
 
         <div className="flex justify-end gap-2 pt-4">
           <Button type="submit" disabled={isPending}>
-            {isPending ? "Saving..." : initialData ? "Update Creative" : "Create Creative"}
+            {isPending ? "Salvando..." : initialData ? "Atualizar Criativo" : "Criar Criativo"}
           </Button>
         </div>
       </form>

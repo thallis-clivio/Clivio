@@ -13,7 +13,6 @@ import {
 
 const router = Router();
 
-// Commission rates per plan
 const COMMISSION_RATES = {
   sales5m: 217,
   sales7m: 300,
@@ -85,13 +84,13 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
 router.get("/creatives", async (req, res) => {
   const parseResult = ListCreativesQueryParams.safeParse(req.query);
   if (!parseResult.success) {
-    res.status(400).json({ error: "Invalid query params" });
+    res.status(400).json({ error: "Parâmetros inválidos" });
     return;
   }
 
   const { decision, sortBy, sortOrder } = parseResult.data;
 
-  let rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable);
   let results = rows.map(withMetrics);
 
   if (decision) {
@@ -147,7 +146,7 @@ router.post("/creatives", async (req, res) => {
 router.get("/creatives/:id", async (req, res) => {
   const parseResult = GetCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "ID inválido" });
     return;
   }
 
@@ -157,7 +156,7 @@ router.get("/creatives/:id", async (req, res) => {
     .where(eq(creativesTable.id, parseResult.data.id));
 
   if (!row) {
-    res.status(404).json({ error: "Creative not found" });
+    res.status(404).json({ error: "Criativo não encontrado" });
     return;
   }
 
@@ -168,7 +167,7 @@ router.get("/creatives/:id", async (req, res) => {
 router.put("/creatives/:id", async (req, res) => {
   const paramsResult = UpdateCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!paramsResult.success) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "ID inválido" });
     return;
   }
 
@@ -199,7 +198,7 @@ router.put("/creatives/:id", async (req, res) => {
     .returning();
 
   if (!updated) {
-    res.status(404).json({ error: "Creative not found" });
+    res.status(404).json({ error: "Criativo não encontrado" });
     return;
   }
 
@@ -210,7 +209,7 @@ router.put("/creatives/:id", async (req, res) => {
 router.delete("/creatives/:id", async (req, res) => {
   const parseResult = DeleteCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "ID inválido" });
     return;
   }
 
@@ -220,7 +219,7 @@ router.delete("/creatives/:id", async (req, res) => {
     .returning();
 
   if (!deleted) {
-    res.status(404).json({ error: "Creative not found" });
+    res.status(404).json({ error: "Criativo não encontrado" });
     return;
   }
 
@@ -231,7 +230,7 @@ router.delete("/creatives/:id", async (req, res) => {
 router.post("/creatives/:id/analyze", async (req, res) => {
   const parseResult = AnalyzeCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) {
-    res.status(400).json({ error: "Invalid id" });
+    res.status(400).json({ error: "ID inválido" });
     return;
   }
 
@@ -241,7 +240,7 @@ router.post("/creatives/:id/analyze", async (req, res) => {
     .where(eq(creativesTable.id, parseResult.data.id));
 
   if (!row) {
-    res.status(404).json({ error: "Creative not found" });
+    res.status(404).json({ error: "Criativo não encontrado" });
     return;
   }
 
@@ -253,24 +252,24 @@ router.post("/creatives/:id/analyze", async (req, res) => {
 
   switch (decision) {
     case "ESCALAR":
-      explanation = `"${row.name}" is performing exceptionally well with a ROAS of ${roas.toFixed(2)}x. Commission of $${commission.toFixed(0)} on $${spend.toFixed(0)} spend shows strong profitability. CTR of ${ctr.toFixed(2)}% and hook rate of ${hookRate.toFixed(2)}% indicate high audience engagement.`;
-      nextAction = `Increase budget by 20-30% and monitor performance over the next 48 hours. Consider duplicating this creative to test new audiences while the original continues to scale.`;
+      explanation = `"${row.name}" está com desempenho excepcional, com um ROAS de ${roas.toFixed(2)}x. A comissão de R$${commission.toFixed(0)} sobre um gasto de R$${spend.toFixed(0)} demonstra alta lucratividade. O CTR de ${ctr.toFixed(2)}% e a taxa de hook de ${hookRate.toFixed(2)}% indicam forte engajamento do público.`;
+      nextAction = `Aumente o orçamento em 20-30% e monitore o desempenho nas próximas 48 horas. Considere duplicar este criativo para testar novos públicos enquanto o original continua escalando.`;
       break;
     case "MONITORAR":
-      explanation = `"${row.name}" is showing acceptable returns with a ROAS of ${roas.toFixed(2)}x, but hasn't crossed the scale threshold of 2.0x yet. Revenue is covering spend with a ${((roas - 1) * 100).toFixed(0)}% margin. ${daysWithoutSales > 0 ? `Note: ${daysWithoutSales} day(s) without sales, which could indicate fatigue.` : ""}`;
-      nextAction = `Hold current budget. Review ad creative and audience overlap. A/B test new hooks or CTAs to push ROAS above 2.0x. Reassess within 24-48 hours.`;
+      explanation = `"${row.name}" apresenta retorno aceitável com um ROAS de ${roas.toFixed(2)}x, mas ainda não cruzou o limite de escala de 2,0x. A receita cobre o gasto com uma margem de ${((roas - 1) * 100).toFixed(0)}%. ${daysWithoutSales > 0 ? `Atenção: ${daysWithoutSales} dia(s) sem vendas, o que pode indicar fadiga criativa.` : ""}`;
+      nextAction = `Mantenha o orçamento atual. Revise o criativo e a sobreposição de públicos. Teste novos hooks ou CTAs para elevar o ROAS acima de 2,0x. Reavalie em 24 a 48 horas.`;
       break;
     case "OTIMIZAR":
-      explanation = `"${row.name}" is breaking even with a ROAS of ${roas.toFixed(2)}x, meaning spend is barely covered by commission revenue. CTR of ${ctr.toFixed(2)}% and hook rate of ${hookRate.toFixed(2)}% need improvement. ${daysWithoutSales > 0 ? `${daysWithoutSales} day(s) without sales is a warning sign.` : ""}`;
-      nextAction = `Reduce budget by 30-50% immediately. Test a new hook, creative format, or audience segment. Consider refreshing ad copy and visuals. Set a 72-hour window — if no improvement, pause.`;
+      explanation = `"${row.name}" está no ponto de equilíbrio com um ROAS de ${roas.toFixed(2)}x, ou seja, o gasto mal é coberto pela comissão. O CTR de ${ctr.toFixed(2)}% e a taxa de hook de ${hookRate.toFixed(2)}% precisam melhorar. ${daysWithoutSales > 0 ? `${daysWithoutSales} dia(s) sem vendas é um sinal de alerta.` : ""}`;
+      nextAction = `Reduza o orçamento em 30 a 50% imediatamente. Teste um novo hook, formato de criativo ou segmento de público. Considere renovar o texto e os visuais do anúncio. Defina uma janela de 72 horas — se não houver melhora, pause.`;
       break;
     case "PAUSAR":
       if (daysWithoutSales >= 2) {
-        explanation = `"${row.name}" has been paused due to ${daysWithoutSales} consecutive days without sales — a hard stop rule regardless of ROAS. Creative fatigue or audience exhaustion is likely.`;
-        nextAction = `Pause this creative immediately. Analyze which audience segments it last converted on. Rework the creative concept with a fresh hook and relaunch to a cold lookalike audience.`;
+        explanation = `"${row.name}" foi pausado devido a ${daysWithoutSales} dias consecutivos sem vendas — uma regra de parada automática independente do ROAS. Fadiga criativa ou esgotamento de público é a causa mais provável.`;
+        nextAction = `Pause este criativo imediatamente. Analise em quais segmentos de público ele converteu pela última vez. Reformule o conceito criativo com um novo hook e relance para um público lookalike frio.`;
       } else {
-        explanation = `"${row.name}" is losing money with a ROAS of ${roas.toFixed(2)}x — commission ($${commission.toFixed(0)}) is below spend ($${spend.toFixed(0)}). Low CTR (${ctr.toFixed(2)}%) suggests the ad isn't compelling enough to capture attention.`;
-        nextAction = `Pause this creative immediately to stop the bleed. Do a post-mortem: was the hook weak? Wrong audience? Poor offer alignment? Archive learnings before relaunching with a completely different angle.`;
+        explanation = `"${row.name}" está gerando prejuízo com um ROAS de ${roas.toFixed(2)}x — a comissão (R$${commission.toFixed(0)}) está abaixo do gasto (R$${spend.toFixed(0)}). O CTR baixo (${ctr.toFixed(2)}%) sugere que o anúncio não está sendo atraente o suficiente para capturar a atenção.`;
+        nextAction = `Pause este criativo imediatamente para estancar o prejuízo. Faça uma análise pós-campanha: o hook era fraco? Público errado? Oferta desalinhada? Registre os aprendizados antes de relançar com um ângulo completamente diferente.`;
       }
       break;
   }
