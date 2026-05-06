@@ -203,20 +203,32 @@ export default function Criativos() {
             <h2 className="text-3xl font-bold tracking-tight">Central de Criativos</h2>
             <p className="text-muted-foreground">Todos os criativos ativos com métricas acumuladas.</p>
           </div>
-          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2" data-testid="button-add-creative">
-                <Plus className="w-4 h-4" />
-                Adicionar Criativo
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[440px] border-border">
-              <DialogHeader>
-                <DialogTitle>Novo Criativo</DialogTitle>
-              </DialogHeader>
-              <CreativeForm onSuccess={() => { setIsCreateOpen(false); invalidateAll(); }} />
-            </DialogContent>
-          </Dialog>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 text-muted-foreground"
+              onClick={handleSeedDemo}
+              disabled={isSeeding}
+            >
+              <FlaskConical className="w-3.5 h-3.5" />
+              {isSeeding ? "Carregando..." : "Demo"}
+            </Button>
+            <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2" data-testid="button-add-creative">
+                  <Plus className="w-4 h-4" />
+                  Adicionar Criativo
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[440px] border-border">
+                <DialogHeader>
+                  <DialogTitle>Novo Criativo</DialogTitle>
+                </DialogHeader>
+                <CreativeForm onSuccess={() => { setIsCreateOpen(false); invalidateAll(); }} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         {/* Table */}
