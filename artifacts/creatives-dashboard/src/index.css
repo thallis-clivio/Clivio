@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @plugin "@tailwindcss/typography";
+@import "./components/theme.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -50,79 +51,59 @@
 }
 
 :root {
-  --background: 240 10% 4%;
+  --background: 240 14% 4%;
   --foreground: 0 0% 98%;
-
-  --border: 240 10% 12%;
-
-  --card: 240 10% 6%;
+  --border: 240 12% 14%;
+  --card: 240 14% 6%;
   --card-foreground: 0 0% 98%;
-  --card-border: 240 10% 16%;
-
-  --popover: 240 10% 4%;
+  --card-border: 240 12% 16%;
+  --popover: 240 14% 4%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 240 10% 12%;
-
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-
-  --accent: 240 3.7% 15.9%;
+  --popover-border: 240 12% 14%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 252 85% 58%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 10% 14%;
+  --muted-foreground: 240 5% 68%;
+  --accent: 240 10% 14%;
   --accent-foreground: 0 0% 98%;
-
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-
-  --input: 240 10% 12%;
-  --ring: 240 4.9% 83.9%;
-  
-  --chart-1: 220 70% 50%;
-  --chart-2: 160 60% 45%;
-  --chart-3: 30 80% 55%;
-  --chart-4: 280 65% 60%;
-  --chart-5: 340 75% 55%;
-
-  --app-font-sans: 'Inter', sans-serif;
+  --input: 240 12% 14%;
+  --ring: 217 91% 60%;
+  --chart-1: 217 91% 60%;
+  --chart-2: 252 85% 58%;
+  --chart-3: 264 90% 62%;
+  --chart-4: 196 100% 58%;
+  --chart-5: 284 92% 62%;
+  --app-font-sans: "Inter", sans-serif;
   --app-font-mono: Menlo, monospace;
   --radius: 0.5rem;
 }
 
 .dark {
-  --background: 240 10% 4%;
+  --background: 240 14% 4%;
   --foreground: 0 0% 98%;
-
-  --border: 240 10% 15%;
-
-  --card: 240 10% 7%;
+  --border: 240 12% 14%;
+  --card: 240 14% 6%;
   --card-foreground: 0 0% 98%;
-  --card-border: 240 10% 15%;
-
-  --popover: 240 10% 4%;
+  --card-border: 240 12% 16%;
+  --popover: 240 14% 4%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 240 10% 12%;
-
-  --primary: 0 0% 98%;
-  --primary-foreground: 240 5.9% 10%;
-
-  --secondary: 240 10% 15%;
-  --secondary-foreground: 0 0% 98%;
-
-  --muted: 240 10% 15%;
-  --muted-foreground: 240 5% 64.9%;
-
-  --accent: 240 10% 15%;
+  --popover-border: 240 12% 14%;
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 252 85% 58%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 10% 14%;
+  --muted-foreground: 240 5% 68%;
+  --accent: 240 10% 14%;
   --accent-foreground: 0 0% 98%;
-
   --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
-
-  --input: 240 10% 15%;
-  --ring: 240 4.9% 83.9%;
+  --input: 240 12% 14%;
+  --ring: 217 91% 60%;
 }
 
 @layer base {

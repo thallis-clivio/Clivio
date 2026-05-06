@@ -1,11 +1,12 @@
 import { Link } from "wouter";
 import { BarChart3, TrendingUp, Zap, ShieldCheck } from "lucide-react";
+import { BrandLogo } from "@/components/brand-logo";
 
 export default function Landing() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold tracking-tight text-primary">Clivio</h1>
+        <BrandLogo showText />
         <div className="flex items-center gap-3">
           <Link
             href="/sign-in"
@@ -69,7 +70,7 @@ export default function Landing() {
             <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center">
               <BarChart3 className="h-5 w-5 text-primary" />
             </div>
-            <h3 className="font-semibold text-sm">Previsibilidade</h3>
+            <h3 className="font-semibold text-sm">Desempenho</h3>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Score 0–100 que mede consistência de conversões, qualidade de ROAS e eficiência de CPA.
             </p>
