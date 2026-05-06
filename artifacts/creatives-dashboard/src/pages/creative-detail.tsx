@@ -203,11 +203,26 @@ export default function CreativeDetail() {
           <Alert className="border-primary bg-primary/5" data-testid="alert-analysis">
             <BrainCircuit className="h-5 w-5 text-primary" />
             <AlertTitle className="font-bold tracking-widest uppercase text-primary">Relatório de Inteligência</AlertTitle>
-            <AlertDescription className="mt-2 space-y-4">
-              <div className="text-foreground">{analyzeCreative.data.explanation}</div>
+            <AlertDescription className="mt-2 space-y-3">
+              <div className="space-y-2">
+                {analyzeCreative.data.explanation.split("\n\n").map((block, bi) => (
+                  <div key={bi}>
+                    {block.split("\n").map((line, li) => {
+                      const isMath = line.startsWith("Comissão:") || line.startsWith("ROAS") || line.startsWith("CPA");
+                      return isMath ? (
+                        <div key={li} className="font-mono text-xs bg-background/60 border border-border/60 rounded px-2 py-1 mt-1 text-foreground/90 leading-relaxed">
+                          {line}
+                        </div>
+                      ) : (
+                        <p key={li} className="text-foreground text-sm leading-relaxed">{line}</p>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
               <div className="bg-background/50 p-3 rounded-md border border-border">
                 <strong className="block text-xs uppercase tracking-wider text-muted-foreground mb-1">Ação Recomendada</strong>
-                <span className="font-mono text-sm">{analyzeCreative.data.nextAction}</span>
+                <span className="text-sm">{analyzeCreative.data.nextAction}</span>
               </div>
             </AlertDescription>
           </Alert>

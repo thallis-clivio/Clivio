@@ -276,10 +276,12 @@ function generateSyntheticHistory(
     pattern = [0, 1, t, 1, t, t, t];
   }
 
-  const end = new Date(baseDate + "T12:00:00Z");
+  // Always anchor to today so all creatives share the same 30/04 → today window
+  const end = new Date();
+  end.setUTCHours(12, 0, 0, 0);
   return pattern.map((sales, i) => {
     const d = new Date(end);
-    d.setDate(d.getDate() - (6 - i));
+    d.setUTCDate(d.getUTCDate() - (6 - i));
     return {
       date: d.toISOString().split("T")[0],
       totalSales: sales,
@@ -321,6 +323,36 @@ router.get("/creatives/:id/chart", async (req, res) => {
   res.json(chartData);
 });
 
+const PLAN_LABELS: { key: keyof typeof COMMISSION_RATES; label: string; rate: number }[] = [
+  { key: "sales5m",  label: "5 meses",  rate: 217 },
+  { key: "sales7m",  label: "7 meses",  rate: 300 },
+  { key: "sales9m",  label: "9 meses",  rate: 380 },
+  { key: "sales12m", label: "12 meses", rate: 460 },
+  { key: "sales16m", label: "16 meses", rate: 520 },
+  { key: "sales20m", label: "20 meses", rate: 650 },
+];
+
+function fmtBRL(v: number) {
+  return `R$${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function buildSalesBreakdown(row: typeof creativesTable.$inferSelect): { text: string; commission: number } {
+  const lines: string[] = [];
+  let total = 0;
+  for (const p of PLAN_LABELS) {
+    const qty = row[p.key] as number;
+    if (qty > 0) {
+      const sub = qty * p.rate;
+      total += sub;
+      lines.push(`${qty}× Plano ${p.label} (${fmtBRL(p.rate)}) = ${fmtBRL(sub)}`);
+    }
+  }
+  return {
+    text: lines.length > 0 ? lines.join(" | ") : "Nenhuma venda registrada",
+    commission: total,
+  };
+}
+
 // POST /creatives/:id/analyze
 router.post("/creatives/:id/analyze", async (req, res) => {
   const parseResult = AnalyzeCreativeParams.safeParse({ id: Number(req.params.id) });
@@ -332,46 +364,53 @@ router.post("/creatives/:id/analyze", async (req, res) => {
   const m = withMetrics(row);
   const { decision, roas, cpa, commission, spend, ctr, totalSales, daysWithoutSales, predictabilityScore, predictabilityLabel } = m;
 
+  const { text: breakdownText } = buildSalesBreakdown(row);
+
+  // Verified math strings
+  const commissionCalc = totalSales > 0
+    ? `Comissão: ${breakdownText} → Total ${fmtBRL(commission)}`
+    : "Comissão: R$0,00 (sem vendas)";
+  const roasCalc = `ROAS = ${fmtBRL(commission)} ÷ ${fmtBRL(spend)} = ${roas.toFixed(2)}x`;
+  const cpaCalc = totalSales > 0
+    ? `CPA = ${fmtBRL(spend)} ÷ ${totalSales} venda(s) = ${fmtBRL(cpa)}`
+    : "CPA = incalculável (sem vendas)";
+
+  const prevText = predictabilityScore > 80
+    ? `Previsibilidade ${predictabilityScore}/100 — alta confiança para escalar.`
+    : predictabilityScore >= 50
+    ? `Previsibilidade moderada (${predictabilityScore}/100) — monitore antes de aumentar orçamento.`
+    : `Previsibilidade baixa (${predictabilityScore}/100) — padrão de conversões instável.`;
+
+  const cpaQual = totalSales === 0 ? ""
+    : cpa < 200 ? `CPA excelente (${fmtBRL(cpa)}) — custo de aquisição muito eficiente.`
+    : cpa < 350 ? `CPA aceitável (${fmtBRL(cpa)}) — há espaço para otimizar.`
+    : `CPA elevado (${fmtBRL(cpa)}) — margem comprimida.`;
+
+  const { monitorarReason } = m;
   let explanation = "";
   let nextAction = "";
 
-  const prevText = predictabilityScore > 80
-    ? `Com pontuação de previsibilidade de ${predictabilityScore}/100 (${predictabilityLabel}), este criativo pode ser escalado com alta confiança.`
-    : predictabilityScore >= 50
-    ? `A previsibilidade é moderada (${predictabilityScore}/100 — ${predictabilityLabel}). Monitore de perto antes de aumentar o orçamento.`
-    : `Previsibilidade baixa (${predictabilityScore}/100 — ${predictabilityLabel}). O padrão de conversões é instável e exige atenção.`;
-
-  const cpaText = totalSales === 0
-    ? `Sem vendas registradas — CPA incalculável.`
-    : cpa < 200
-    ? `O CPA de R$${cpa.toFixed(0)} está excelente — custo de aquisição muito eficiente.`
-    : cpa < 350
-    ? `O CPA de R$${cpa.toFixed(0)} está dentro do aceitável, mas há espaço para otimizar.`
-    : `O CPA de R$${cpa.toFixed(0)} está alto — o custo por venda está comprimindo a margem.`;
-
-  const { monitorarReason } = m;
-
   switch (decision) {
     case "ESCALAR":
-      explanation = `"${row.name}" está com desempenho excepcional — ROAS de ${roas.toFixed(2)}x com ${totalSales} venda(s) geradas. A comissão de R$${commission.toFixed(0)} sobre um gasto de R$${spend.toFixed(0)} demonstra alta lucratividade. ${cpaText} ${prevText}`;
-      nextAction = `Aumente o orçamento em 20–30% e monitore as próximas 48 horas. Considere duplicar este criativo para novos públicos enquanto o original continua escalando.`;
+      explanation = `"${row.name}" está com desempenho excepcional.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
+      nextAction = `Aumente o orçamento em 20–30% e monitore as próximas 48h. Considere duplicar este criativo para novos públicos enquanto o original continua escalando.`;
       break;
     case "MONITORAR":
       if (monitorarReason === "decaindo") {
-        explanation = `"${row.name}" era um criativo forte (ROAS de ${roas.toFixed(2)}x), mas entrou em alerta por ${daysWithoutSales} dia(s) sem conversões — sinal de queda de performance. ${cpaText} ${prevText}`;
-        nextAction = `Não aumente o orçamento agora. Monitore as próximas 24 horas. Se o próximo dia também não converter, execute a parada. Verifique segmentação, frequência e fatiga do criativo.`;
+        explanation = `"${row.name}" era um criativo forte, mas está sem conversões há ${daysWithoutSales} dia(s) — sinal de queda.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
+        nextAction = `Não aumente o orçamento agora. Monitore as próximas 24h. Se o dia seguinte também não converter, pause. Verifique segmentação, frequência e fadiga do criativo.`;
       } else {
-        explanation = `"${row.name}" está operando no positivo — ROAS de ${roas.toFixed(2)}x — mas abaixo do limiar de escala de 2x. A comissão de R$${commission.toFixed(0)} cobre o gasto de R$${spend.toFixed(0)}, porém com margem estreita. ${cpaText} ${prevText}`;
-        nextAction = `Mantenha o orçamento atual e observe por mais 48h. Se o ROAS subir acima de 2x sem interrupção de conversões, escale. Teste variações de copy ou público para destravar o potencial.`;
+        explanation = `"${row.name}" está operando no positivo, mas abaixo do limiar de escala (ROAS mínimo 2x).\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
+        nextAction = `Mantenha o orçamento atual e observe por mais 48h. Se o ROAS ultrapassar 2x sem interrupção de conversões, escale. Teste variações de copy ou público para destravar o potencial.`;
       }
       break;
     case "PAUSAR":
     default:
       if (daysWithoutSales >= 2) {
-        explanation = `"${row.name}" foi pausado por ${daysWithoutSales} dias consecutivos sem vendas — regra automática de parada. ${prevText}`;
+        explanation = `"${row.name}" está sem conversões há ${daysWithoutSales} dias consecutivos — regra automática de parada ativada.\n\n${commissionCalc}\n${roasCalc}\n\n${prevText}`;
         nextAction = `Pause imediatamente. Analise os últimos públicos que converteram. Reformule o criativo com novo hook e relance para lookalike frio.`;
       } else {
-        explanation = `"${row.name}" está gerando prejuízo — ROAS de ${roas.toFixed(2)}x, comissão (R$${commission.toFixed(0)}) abaixo do gasto (R$${spend.toFixed(0)}). ${cpaText} ${prevText}`;
+        explanation = `"${row.name}" está gerando prejuízo — comissão abaixo do investimento.\n\n${commissionCalc}\n${roasCalc}\n${cpaCalc}\n\n${cpaQual} ${prevText}`;
         nextAction = `Pause imediatamente para estancar o prejuízo. Faça post-mortem: hook fraco? Público errado? Oferta desalinhada? Registre os aprendizados e relance com ângulo completamente diferente.`;
       }
       break;
