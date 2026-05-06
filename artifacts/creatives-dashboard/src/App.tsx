@@ -11,6 +11,9 @@ import Home from "@/pages/home";
 import Landing from "@/pages/landing";
 import CreativeDetail from "@/pages/creative-detail";
 import Settings from "@/pages/settings";
+import Criativos from "@/pages/criativos";
+import Relatorios from "@/pages/relatorios";
+import Alertas from "@/pages/alertas";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -145,37 +148,11 @@ function HomeRedirect() {
   );
 }
 
-function DashboardRoute() {
+function AuthedRoute({ component: Component }: { component: () => React.ReactNode }) {
   return (
     <>
       <Show when="signed-in">
-        <Home />
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/" />
-      </Show>
-    </>
-  );
-}
-
-function CreativeDetailRoute() {
-  return (
-    <>
-      <Show when="signed-in">
-        <CreativeDetail />
-      </Show>
-      <Show when="signed-out">
-        <Redirect to="/" />
-      </Show>
-    </>
-  );
-}
-
-function SettingsRoute() {
-  return (
-    <>
-      <Show when="signed-in">
-        <Settings />
+        <Component />
       </Show>
       <Show when="signed-out">
         <Redirect to="/" />
@@ -188,9 +165,12 @@ function AppRouter() {
   return (
     <Switch>
       <Route path="/" component={HomeRedirect} />
-      <Route path="/dashboard" component={DashboardRoute} />
-      <Route path="/creatives/:id" component={CreativeDetailRoute} />
-      <Route path="/settings" component={SettingsRoute} />
+      <Route path="/dashboard" component={() => <AuthedRoute component={Home} />} />
+      <Route path="/criativos" component={() => <AuthedRoute component={Criativos} />} />
+      <Route path="/relatorios" component={() => <AuthedRoute component={Relatorios} />} />
+      <Route path="/alertas" component={() => <AuthedRoute component={Alertas} />} />
+      <Route path="/creatives/:id" component={() => <AuthedRoute component={CreativeDetail} />} />
+      <Route path="/settings" component={() => <AuthedRoute component={Settings} />} />
       <Route path="/sign-in/*?" component={SignInPage} />
       <Route path="/sign-up/*?" component={SignUpPage} />
       <Route component={NotFound} />

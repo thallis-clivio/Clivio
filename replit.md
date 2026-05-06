@@ -51,10 +51,13 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - **Landing page** (`/`): Public page with hero + 3 feature cards; redirects signed-in users to `/dashboard`
 - **Sign-in** (`/sign-in`): Clerk-hosted, dark theme, "Entrar no Clivio"
 - **Sign-up** (`/sign-up`): Clerk-hosted, dark theme, "Criar conta no Clivio"
-- **Dashboard** (`/dashboard`): 5 KPI cards, date filter tabs (Hoje/Semana/Mês/Tudo), multi-metric chart, performance summary, creatives table with decisions
+- **Dashboard** (`/dashboard`): 5 KPI cards, date filter tabs (Hoje/7 dias/15 dias/30 dias/Personalizado), multi-metric chart, performance summary — NO creatives table
+- **Central de Criativos** (`/criativos`): ALL creatives (always `dateFilter: "all"`), sort + decision filter, "Adicionar Criativo" button — never filtered by date
+- **Relatórios** (`/relatorios`): Date-filtered performance report; 5 KPI summary + table; "Exportar CSV" button (generates UTF-8 BOM CSV)
+- **Alertas** (`/alertas`): Real-time actionable alerts from decision engine — PAUSAR / MONITORAR decaindo / ESCALAR sections; stats banner (investimento em risco, comissão potencial)
 - **Creative detail** (`/creatives/:id`): Full metrics breakdown, predictability bar, "Analisar com Claude" button streams real-time Claude analysis (Diagnóstico / Pontos críticos / Próximos passos)
-- Sidebar logout button + user email display
-- "Simular Venda" button in dashboard header (no auth required on `/api/webhooks/simulate`)
+- **Configurações** (`/settings`): Per-user commission settings
+- Sidebar grouped: Análise (Visão Geral / Central de Criativos / Relatórios) | Operação (Alertas) | Conta (Configurações)
 - Payt postback at `/api/webhooks/payt` (unprotected, validates PAYT_INTEGRATION_KEY); utm_content supports `userId::creativeName` for per-user routing, falls back to global name search for legacy values
 
 ## Gotchas
