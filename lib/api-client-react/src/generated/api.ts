@@ -33,6 +33,7 @@ import type {
   ListCreativesParams,
   PaytWebhookPayload,
   PerformanceSummary,
+  SimulateSaleBody,
   WebhookResponse,
 } from "./api.schemas";
 
@@ -1240,4 +1241,90 @@ export const useHandlePaytWebhook = <
   TContext
 > => {
   return useMutation(getHandlePaytWebhookMutationOptions(options));
+};
+
+/**
+ * @summary Simulate a sale for testing purposes (no auth required)
+ */
+export const getSimulateSaleUrl = () => {
+  return `/api/webhooks/simulate`;
+};
+
+export const simulateSale = async (
+  simulateSaleBody: SimulateSaleBody,
+  options?: RequestInit,
+): Promise<WebhookResponse> => {
+  return customFetch<WebhookResponse>(getSimulateSaleUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(simulateSaleBody),
+  });
+};
+
+export const getSimulateSaleMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simulateSale>>,
+    TError,
+    { data: BodyType<SimulateSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof simulateSale>>,
+  TError,
+  { data: BodyType<SimulateSaleBody> },
+  TContext
+> => {
+  const mutationKey = ["simulateSale"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof simulateSale>>,
+    { data: BodyType<SimulateSaleBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return simulateSale(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SimulateSaleMutationResult = NonNullable<
+  Awaited<ReturnType<typeof simulateSale>>
+>;
+export type SimulateSaleMutationBody = BodyType<SimulateSaleBody>;
+export type SimulateSaleMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Simulate a sale for testing purposes (no auth required)
+ */
+export const useSimulateSale = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof simulateSale>>,
+    TError,
+    { data: BodyType<SimulateSaleBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof simulateSale>>,
+  TError,
+  { data: BodyType<SimulateSaleBody> },
+  TContext
+> => {
+  return useMutation(getSimulateSaleMutationOptions(options));
 };

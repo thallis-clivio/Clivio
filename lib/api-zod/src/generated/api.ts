@@ -362,3 +362,20 @@ export const HandlePaytWebhookResponse = zod.object({
   planField: zod.string().optional(),
   delta: zod.number().optional(),
 });
+
+/**
+ * @summary Simulate a sale for testing purposes (no auth required)
+ */
+export const SimulateSaleBody = zod.object({
+  creativeName: zod.string(),
+  plan: zod.enum(["5m", "7m", "9m", "12m", "16m", "20m"]),
+  cancelled: zod.boolean().optional(),
+});
+
+export const SimulateSaleResponse = zod.object({
+  ok: zod.boolean(),
+  reason: zod.string().optional(),
+  creativeId: zod.number().optional(),
+  planField: zod.string().optional(),
+  delta: zod.number().optional(),
+});

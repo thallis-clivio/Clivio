@@ -98,4 +98,36 @@ router.post("/webhooks/payt", async (req, res) => {
   res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
 });
 
+// POST /webhooks/simulate — test endpoint, no auth required
+router.post("/webhooks/simulate", async (req, res) => {
+  const { creativeName, plan, cancelled } = req.body as {
+    creativeName: string;
+    plan: string;
+    cancelled?: boolean;
+  };
+
+  if (!creativeName || !plan) {
+    res.status(200).json({ ok: false, reason: "missing_fields" });
+    return;
+  }
+
+  const rows = await db.select().from(creativesTable);
+  const creative = rows.find(r => r.name.toLowerCase() === creativeName.toLowerCase());
+
+  if (!creative) {
+    res.status(200).json({ ok: false, reason: "creative_not_found", utmContent: creativeName });
+    return;
+  }
+
+  const planField = PLAN_FIELDS[plan as keyof typeof PLAN_FIELDS] ?? "sales5m";
+  const delta = cancelled ? -1 : 1;
+
+  await db.update(creativesTable)
+    .set({ [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)` })
+    .where(sql`id = ${creative.id}`);
+
+  req.log.info({ creativeId: creative.id, planField, delta }, "simulate webhook processed");
+  res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
+});
+
 export default router;

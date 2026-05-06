@@ -153,6 +153,24 @@ export interface AnalysisResult {
   metrics: AnalysisResultMetrics;
 }
 
+export type SimulateSaleBodyPlan =
+  (typeof SimulateSaleBodyPlan)[keyof typeof SimulateSaleBodyPlan];
+
+export const SimulateSaleBodyPlan = {
+  "5m": "5m",
+  "7m": "7m",
+  "9m": "9m",
+  "12m": "12m",
+  "16m": "16m",
+  "20m": "20m",
+} as const;
+
+export interface SimulateSaleBody {
+  creativeName: string;
+  plan: SimulateSaleBodyPlan;
+  cancelled?: boolean;
+}
+
 export interface PaytWebhookPayload {
   integration_key?: string;
   transaction_id?: string;

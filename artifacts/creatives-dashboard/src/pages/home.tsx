@@ -1,15 +1,17 @@
 import { useState, useMemo } from "react";
 import { Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useListCreatives, getListCreativesQueryKey,
   useGetDashboardSummary, getGetDashboardSummaryQueryKey,
   useGetPerformanceSummary, getGetPerformanceSummaryQueryKey,
   useGetDashboardCharts, getGetDashboardChartsQueryKey,
+  useSimulateSale,
 } from "@workspace/api-client-react";
 import {
   ListCreativesParams, CreativeWithMetricsDecision,
   ListCreativesSortBy, ListCreativesSortOrder,
-  PerformanceSummary,
+  PerformanceSummary, SimulateSaleBodyPlan,
 } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +24,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, ChevronsUpDown, Rocket, Ban } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, ChevronsUpDown, Rocket, Ban, FlaskConical, CheckCircle, XCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -226,6 +228,25 @@ export default function Home() {
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
   const [sortOrder, setSortOrder] = useState<ListCreativesSortOrder>("desc");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isSimulateOpen, setIsSimulateOpen] = useState(false);
+  const [simCreative, setSimCreative] = useState("");
+  const [simPlan, setSimPlan] = useState<SimulateSaleBodyPlan>("7m");
+  const [simResult, setSimResult] = useState<"success" | "error" | null>(null);
+
+  const queryClient = useQueryClient();
+  const simulateMutation = useSimulateSale({
+    mutation: {
+      onSuccess: (data) => {
+        if (data.ok) {
+          setSimResult("success");
+          queryClient.invalidateQueries();
+        } else {
+          setSimResult("error");
+        }
+      },
+      onError: () => setSimResult("error"),
+    },
+  });
 
   function handleSort(col: ListCreativesSortBy) {
     if (sortBy === col) {
@@ -289,6 +310,92 @@ export default function Home() {
                 </button>
               ))}
             </div>
+            <Dialog open={isSimulateOpen} onOpenChange={(open) => {
+              setIsSimulateOpen(open);
+              if (!open) { setSimResult(null); setSimCreative(""); setSimPlan("7m"); }
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2 border-dashed border-yellow-500/50 text-yellow-400 hover:bg-yellow-500/10 hover:text-yellow-300">
+                  <FlaskConical className="w-4 h-4" />
+                  Simular Venda
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[420px] border-border">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    <FlaskConical className="w-4 h-4 text-yellow-400" />
+                    Simular Venda (Teste)
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-2">
+                  <p className="text-sm text-muted-foreground">
+                    Simula uma venda recebida via postback da Payt. Use para verificar se o webhook está funcionando corretamente.
+                  </p>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Criativo</label>
+                    <Select value={simCreative} onValueChange={setSimCreative}>
+                      <SelectTrigger className="border-border">
+                        <SelectValue placeholder="Selecione o criativo..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {creatives?.map(c => (
+                          <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Plano</label>
+                    <Select value={simPlan} onValueChange={(v) => setSimPlan(v as SimulateSaleBodyPlan)}>
+                      <SelectTrigger className="border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(["5m", "7m", "9m", "12m", "16m", "20m"] as const).map(p => (
+                          <SelectItem key={p} value={p}>{p}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {simResult === "success" && (
+                    <div className="flex items-center gap-2 text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg p-3 text-sm">
+                      <CheckCircle className="w-4 h-4 shrink-0" />
+                      Venda simulada com sucesso! O dashboard foi atualizado.
+                    </div>
+                  )}
+                  {simResult === "error" && (
+                    <div className="flex items-center gap-2 text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg p-3 text-sm">
+                      <XCircle className="w-4 h-4 shrink-0" />
+                      Criativo não encontrado. Verifique o nome exato.
+                    </div>
+                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      className="flex-1"
+                      disabled={!simCreative || simulateMutation.isPending}
+                      onClick={() => {
+                        setSimResult(null);
+                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan } });
+                      }}
+                    >
+                      {simulateMutation.isPending ? "Simulando..." : "Simular +1 Venda"}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="border-red-500/30 text-red-400 hover:bg-red-500/10"
+                      disabled={!simCreative || simulateMutation.isPending}
+                      onClick={() => {
+                        setSimResult(null);
+                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, cancelled: true } });
+                      }}
+                    >
+                      −1 (Cancelar)
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="gap-2" data-testid="button-add-creative">

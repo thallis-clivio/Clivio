@@ -326,6 +326,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/WebhookResponse"
 
+  /webhooks/simulate:
+    post:
+      operationId: simulateSale
+      tags: [webhooks]
+      summary: Simulate a sale for testing purposes (no auth required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SimulateSaleBody"
+      responses:
+        "200":
+          description: Simulation result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -575,6 +594,20 @@ components:
         - explanation
         - nextAction
         - metrics
+
+    SimulateSaleBody:
+      type: object
+      properties:
+        creativeName:
+          type: string
+        plan:
+          type: string
+          enum: ["5m", "7m", "9m", "12m", "16m", "20m"]
+        cancelled:
+          type: boolean
+      required:
+        - creativeName
+        - plan
 
     PaytWebhookPayload:
       type: object
