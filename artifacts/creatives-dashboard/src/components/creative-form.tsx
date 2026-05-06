@@ -27,7 +27,6 @@ const editSchema = z.object({
   name: z.string().min(1, "Nome é obrigatório"),
   date: z.string().min(1, "Data é obrigatória"),
   spend: z.coerce.number().min(0, "Deve ser >= 0"),
-  daysWithoutSales: z.coerce.number().min(0, "Deve ser >= 0"),
   sales5m:  z.coerce.number().min(0, "Deve ser >= 0"),
   sales7m:  z.coerce.number().min(0, "Deve ser >= 0"),
   sales9m:  z.coerce.number().min(0, "Deve ser >= 0"),
@@ -60,7 +59,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
     resolver: zodResolver(editSchema),
     defaultValues: {
       name: "", date: today,
-      spend: 0, daysWithoutSales: 0,
+      spend: 0,
       sales5m: 0, sales7m: 0, sales9m: 0,
       sales12m: 0, sales16m: 0, sales20m: 0,
     },
@@ -72,7 +71,6 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
         name: initialData.name,
         date: initialData.date,
         spend: initialData.spend,
-        daysWithoutSales: initialData.daysWithoutSales,
         sales5m:  initialData.sales5m,
         sales7m:  initialData.sales7m,
         sales9m:  initialData.sales9m,
@@ -99,7 +97,7 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
       {
         data: {
           ...values,
-          spend: 0, daysWithoutSales: 0,
+          spend: 0,
           sales5m: 0, sales7m: 0, sales9m: 0,
           sales12m: 0, sales16m: 0, sales20m: 0,
         },
@@ -205,23 +203,13 @@ export function CreativeForm({ onSuccess, initialData }: CreativeFormProps) {
             <TrendingUp className="h-3.5 w-3.5" />
             Desempenho atual
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <FormField control={editForm.control} name="spend" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Gasto acumulado (R$)</FormLabel>
-                <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={editForm.control} name="daysWithoutSales" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Dias sem venda</FormLabel>
-                <FormControl><Input type="number" min="0" placeholder="0" {...field} /></FormControl>
-                <p className="text-[11px] text-muted-foreground mt-1">Dias consecutivos sem nenhuma conversão.</p>
-                <FormMessage />
-              </FormItem>
-            )} />
-          </div>
+          <FormField control={editForm.control} name="spend" render={({ field }) => (
+            <FormItem>
+              <FormLabel>Gasto acumulado (R$)</FormLabel>
+              <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
+              <FormMessage />
+            </FormItem>
+          )} />
         </div>
 
         {/* Vendas por plano */}

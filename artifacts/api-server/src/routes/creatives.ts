@@ -169,8 +169,11 @@ export function withMetrics(c: typeof creativesTable.$inferSelect, rates: Commis
   const totalSales = computeTotalSales(c);
   const roas = c.spend > 0 ? Math.round((commission / c.spend) * 100) / 100 : 0;
   const cpa = totalSales > 0 ? Math.round((c.spend / totalSales) * 100) / 100 : 0;
-  const { decision, monitorarReason, pausarReason } = computeDecision(roas, cpa, c.daysWithoutSales);
-  const { score: predictabilityScore, label: predictabilityLabel } = computePredictability(roas, cpa, c.daysWithoutSales, totalSales);
+  // Compute daysWithoutSales automatically: days since last approved sale, or since row creation
+  const refDate = c.lastSaleAt ?? c.createdAt ?? new Date();
+  const daysWithoutSales = Math.max(0, Math.floor((Date.now() - refDate.getTime()) / 86400000));
+  const { decision, monitorarReason, pausarReason } = computeDecision(roas, cpa, daysWithoutSales);
+  const { score: predictabilityScore, label: predictabilityLabel } = computePredictability(roas, cpa, daysWithoutSales, totalSales);
   return {
     id: c.id,
     name: c.name,
@@ -183,7 +186,7 @@ export function withMetrics(c: typeof creativesTable.$inferSelect, rates: Commis
     sales16m: c.sales16m,
     sales20m: c.sales20m,
     ctr: c.ctr,
-    daysWithoutSales: c.daysWithoutSales,
+    daysWithoutSales,
     commission: Math.round(commission * 100) / 100,
     roas,
     cpa,
@@ -252,7 +255,6 @@ router.post("/creatives", requireAuth, async (req, res) => {
     sales20m: data.sales20m,
     ctr: data.ctr,
     hookRate: 0,
-    daysWithoutSales: data.daysWithoutSales,
   }).returning();
 
   const rates = await getCommissionRates(userId);
@@ -295,7 +297,6 @@ router.put("/creatives/:id", requireAuth, async (req, res) => {
     sales16m: data.sales16m,
     sales20m: data.sales20m,
     ctr: data.ctr,
-    daysWithoutSales: data.daysWithoutSales,
   }).where(and(eq(creativesTable.id, paramsResult.data.id), eq(creativesTable.userId, userId))).returning();
 
   if (!updated) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
@@ -392,7 +393,7 @@ router.get("/creatives/:id/chart", requireAuth, async (req, res) => {
   if (chartData.length <= 1) {
     const rates = await getCommissionRates(userId);
     const m = withMetrics(base, rates);
-    res.json(generateSyntheticHistory(base.date, m.decision, m.monitorarReason, base.daysWithoutSales, m.totalSales));
+    res.json(generateSyntheticHistory(base.date, m.decision, m.monitorarReason, m.daysWithoutSales, m.totalSales));
     return;
   }
 

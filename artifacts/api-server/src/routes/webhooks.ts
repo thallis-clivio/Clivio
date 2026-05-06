@@ -107,9 +107,12 @@ router.post("/webhooks/payt", async (req, res) => {
   const planField = detectPlanField(productName);
   const delta = isApproved ? 1 : -1;
 
-  await db.update(creativesTable)
-    .set({ [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)` })
-    .where(sql`id = ${creative.id}`);
+  const setFields: Record<string, unknown> = {
+    [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
+  };
+  if (isApproved) setFields.lastSaleAt = new Date();
+
+  await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
 
   req.log.info({ creativeId: creative.id, planField, delta, status }, "payt webhook processed");
   res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
@@ -175,9 +178,12 @@ router.post("/webhooks/simulate", async (req, res) => {
   const planField = PLAN_FIELDS[plan as keyof typeof PLAN_FIELDS] ?? "sales5m";
   const delta = cancelled ? -1 : 1;
 
-  await db.update(creativesTable)
-    .set({ [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)` })
-    .where(sql`id = ${creative.id}`);
+  const setFields: Record<string, unknown> = {
+    [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
+  };
+  if (!cancelled) setFields.lastSaleAt = new Date();
+
+  await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
 
   req.log.info({ creativeId: creative.id, planField, delta }, "simulate webhook processed");
   res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });

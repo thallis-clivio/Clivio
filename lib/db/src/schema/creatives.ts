@@ -33,7 +33,9 @@ export const creativesTable = pgTable("creatives", {
   ctr: real("ctr").notNull().default(0),
   // hookRate kept in DB for backward compatibility, defaulted to 0
   hookRate: real("hook_rate").notNull().default(0),
-  daysWithoutSales: integer("days_without_sales").notNull().default(0),
+  // lastSaleAt: updated automatically on every approved postback (Payt/simulate)
+  // daysWithoutSales is computed at read time from this field — NOT stored
+  lastSaleAt: timestamp("last_sale_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -41,6 +43,7 @@ export const insertCreativeSchema = createInsertSchema(creativesTable).omit({
   id: true,
   createdAt: true,
   hookRate: true,
+  lastSaleAt: true,
 });
 
 export type InsertCreative = z.infer<typeof insertCreativeSchema>;

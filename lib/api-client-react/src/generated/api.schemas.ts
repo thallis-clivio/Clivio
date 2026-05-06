@@ -35,7 +35,6 @@ export interface CreateCreativeBody {
   sales16m: number;
   sales20m: number;
   ctr?: number;
-  daysWithoutSales: number;
 }
 
 export type CreativeWithMetricsPredictabilityLabel =
@@ -76,6 +75,7 @@ export const CreativeWithMetricsPausarReason = {
 
 export type CreativeWithMetrics = CreateCreativeBody & {
   id: number;
+  daysWithoutSales: number;
   commission: number;
   roas: number;
   cpa: number;
@@ -207,54 +207,6 @@ export interface WebhookResponse {
   creativeId?: number;
   planField?: string;
   delta?: number;
-}
-
-export type ListCreativesQueryParamsDecision =
-  (typeof ListCreativesQueryParamsDecision)[keyof typeof ListCreativesQueryParamsDecision];
-
-export const ListCreativesQueryParamsDecision = {
-  ESCALAR: "ESCALAR",
-  MONITORAR: "MONITORAR",
-  PAUSAR: "PAUSAR",
-} as const;
-
-export type ListCreativesQueryParamsSortBy =
-  (typeof ListCreativesQueryParamsSortBy)[keyof typeof ListCreativesQueryParamsSortBy];
-
-export const ListCreativesQueryParamsSortBy = {
-  roas: "roas",
-  spend: "spend",
-  commission: "commission",
-  name: "name",
-  cpa: "cpa",
-  totalSales: "totalSales",
-} as const;
-
-export type ListCreativesQueryParamsSortOrder =
-  (typeof ListCreativesQueryParamsSortOrder)[keyof typeof ListCreativesQueryParamsSortOrder];
-
-export const ListCreativesQueryParamsSortOrder = {
-  asc: "asc",
-  desc: "desc",
-} as const;
-
-export type ListCreativesQueryParamsDateFilter =
-  (typeof ListCreativesQueryParamsDateFilter)[keyof typeof ListCreativesQueryParamsDateFilter];
-
-export const ListCreativesQueryParamsDateFilter = {
-  daily: "daily",
-  weekly: "weekly",
-  monthly: "monthly",
-  all: "all",
-} as const;
-
-export interface ListCreativesQueryParams {
-  decision?: ListCreativesQueryParamsDecision;
-  sortBy?: ListCreativesQueryParamsSortBy;
-  sortOrder?: ListCreativesQueryParamsSortOrder;
-  dateFilter?: ListCreativesQueryParamsDateFilter;
-  dateFrom?: string;
-  dateTo?: string;
 }
 
 export type ListCreativesParams = {

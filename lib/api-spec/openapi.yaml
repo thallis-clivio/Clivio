@@ -497,8 +497,6 @@ components:
           type: integer
         ctr:
           type: number
-        daysWithoutSales:
-          type: integer
       required:
         - name
         - date
@@ -509,7 +507,6 @@ components:
         - sales12m
         - sales16m
         - sales20m
-        - daysWithoutSales
 
     CreativeWithMetrics:
       allOf:
@@ -517,6 +514,8 @@ components:
         - type: object
           properties:
             id:
+              type: integer
+            daysWithoutSales:
               type: integer
             commission:
               type: number
@@ -544,6 +543,7 @@ components:
               enum: [semVendas, prejuizo]
           required:
             - id
+            - daysWithoutSales
             - commission
             - roas
             - cpa
