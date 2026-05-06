@@ -1,9 +1,16 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, LogOut } from "lucide-react";
+import { useClerk, useUser } from "@clerk/react";
 
 export function Layout({ children }: { children: ReactNode }) {
   const [location] = useLocation();
+  const { signOut } = useClerk();
+  const { user } = useUser();
+
+  const handleSignOut = () => {
+    signOut({ redirectUrl: "/" });
+  };
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
@@ -14,21 +21,48 @@ export function Layout({ children }: { children: ReactNode }) {
         </div>
         <nav className="p-4 space-y-1 flex-1">
           <Link
-            href="/"
+            href="/dashboard"
             className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-              location === "/" ? "bg-primary text-primary-foreground" : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
+              location === "/dashboard" || location === "/"
+                ? "bg-primary text-primary-foreground"
+                : "hover:bg-accent hover:text-accent-foreground text-muted-foreground"
             }`}
           >
             <LayoutDashboard className="h-4 w-4" />
             Painel
           </Link>
         </nav>
+        <div className="p-4 border-t border-border space-y-3">
+          {user && (
+            <div className="px-3 py-2">
+              <p className="text-xs font-medium text-foreground truncate">{user.fullName || user.username}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {user.primaryEmailAddress?.emailAddress}
+              </p>
+            </div>
+          )}
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair
+          </button>
+        </div>
       </aside>
 
       {/* Mobile header */}
       <header className="md:hidden border-b border-border bg-card p-4 flex items-center justify-between">
         <h1 className="text-lg font-bold tracking-tight text-primary">Clivio</h1>
-        <Link href="/" className="text-sm font-medium text-muted-foreground">Painel</Link>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="text-sm font-medium text-muted-foreground">Painel</Link>
+          <button
+            onClick={handleSignOut}
+            className="text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
+        </div>
       </header>
 
       <main className="flex-1 overflow-auto flex flex-col">

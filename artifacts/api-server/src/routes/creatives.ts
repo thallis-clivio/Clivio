@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import {
   CreateCreativeBody,
   ListCreativesQueryParams,
@@ -10,6 +10,7 @@ import {
   DeleteCreativeParams,
   AnalyzeCreativeParams,
 } from "@workspace/api-zod";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
@@ -147,15 +148,16 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
 }
 
 // GET /creatives
-router.get("/creatives", async (req, res) => {
+router.get("/creatives", requireAuth, async (req, res) => {
   const parseResult = ListCreativesQueryParams.safeParse(req.query);
   if (!parseResult.success) {
     res.status(400).json({ error: "Parâmetros inválidos" });
     return;
   }
 
+  const userId = (req as typeof req & { userId: string }).userId;
   const { decision, sortBy, sortOrder, dateFilter } = parseResult.data;
-  const rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
   let results = rows
     .filter(r => filterByDateRange(r.date, dateFilter))
     .map(withMetrics);
@@ -176,15 +178,17 @@ router.get("/creatives", async (req, res) => {
 });
 
 // POST /creatives
-router.post("/creatives", async (req, res) => {
+router.post("/creatives", requireAuth, async (req, res) => {
   const parseResult = CreateCreativeBody.safeParse(req.body);
   if (!parseResult.success) {
     res.status(400).json({ error: parseResult.error.message });
     return;
   }
 
+  const userId = (req as typeof req & { userId: string }).userId;
   const data = parseResult.data;
   const [created] = await db.insert(creativesTable).values({
+    userId,
     name: data.name,
     date: data.date,
     spend: data.spend,
@@ -203,24 +207,28 @@ router.post("/creatives", async (req, res) => {
 });
 
 // GET /creatives/:id
-router.get("/creatives/:id", async (req, res) => {
+router.get("/creatives/:id", requireAuth, async (req, res) => {
   const parseResult = GetCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) { res.status(400).json({ error: "ID inválido" }); return; }
 
-  const [row] = await db.select().from(creativesTable).where(eq(creativesTable.id, parseResult.data.id));
+  const userId = (req as typeof req & { userId: string }).userId;
+  const [row] = await db.select().from(creativesTable).where(
+    and(eq(creativesTable.id, parseResult.data.id), eq(creativesTable.userId, userId))
+  );
   if (!row) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
   res.json(withMetrics(row));
 });
 
 // PUT /creatives/:id
-router.put("/creatives/:id", async (req, res) => {
+router.put("/creatives/:id", requireAuth, async (req, res) => {
   const paramsResult = UpdateCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!paramsResult.success) { res.status(400).json({ error: "ID inválido" }); return; }
 
   const bodyResult = UpdateCreativeBody.safeParse(req.body);
   if (!bodyResult.success) { res.status(400).json({ error: bodyResult.error.message }); return; }
 
+  const userId = (req as typeof req & { userId: string }).userId;
   const data = bodyResult.data;
   const [updated] = await db.update(creativesTable).set({
     name: data.name,
@@ -234,18 +242,21 @@ router.put("/creatives/:id", async (req, res) => {
     sales20m: data.sales20m,
     ctr: data.ctr,
     daysWithoutSales: data.daysWithoutSales,
-  }).where(eq(creativesTable.id, paramsResult.data.id)).returning();
+  }).where(and(eq(creativesTable.id, paramsResult.data.id), eq(creativesTable.userId, userId))).returning();
 
   if (!updated) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
   res.json(withMetrics(updated));
 });
 
 // DELETE /creatives/:id
-router.delete("/creatives/:id", async (req, res) => {
+router.delete("/creatives/:id", requireAuth, async (req, res) => {
   const parseResult = DeleteCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) { res.status(400).json({ error: "ID inválido" }); return; }
 
-  const [deleted] = await db.delete(creativesTable).where(eq(creativesTable.id, parseResult.data.id)).returning();
+  const userId = (req as typeof req & { userId: string }).userId;
+  const [deleted] = await db.delete(creativesTable).where(
+    and(eq(creativesTable.id, parseResult.data.id), eq(creativesTable.userId, userId))
+  ).returning();
   if (!deleted) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
   res.status(204).send();
@@ -297,15 +308,18 @@ function generateSyntheticHistory(
 }
 
 // GET /creatives/:id/chart
-router.get("/creatives/:id/chart", async (req, res) => {
+router.get("/creatives/:id/chart", requireAuth, async (req, res) => {
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "ID inválido" }); return; }
 
-  const [base] = await db.select().from(creativesTable).where(eq(creativesTable.id, id));
+  const userId = (req as typeof req & { userId: string }).userId;
+  const [base] = await db.select().from(creativesTable).where(
+    and(eq(creativesTable.id, id), eq(creativesTable.userId, userId))
+  );
   if (!base) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
   const dateFilter = req.query.dateFilter as string | undefined;
-  const all = await db.select().from(creativesTable);
+  const all = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   // All rows with the same creative name, filtered by date range
   const rows = all.filter(r => r.name === base.name && filterByDateRange(r.date, dateFilter));
@@ -360,11 +374,14 @@ function buildSalesBreakdown(row: typeof creativesTable.$inferSelect): { text: s
 }
 
 // POST /creatives/:id/analyze
-router.post("/creatives/:id/analyze", async (req, res) => {
+router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
   const parseResult = AnalyzeCreativeParams.safeParse({ id: Number(req.params.id) });
   if (!parseResult.success) { res.status(400).json({ error: "ID inválido" }); return; }
 
-  const [row] = await db.select().from(creativesTable).where(eq(creativesTable.id, parseResult.data.id));
+  const userId = (req as typeof req & { userId: string }).userId;
+  const [row] = await db.select().from(creativesTable).where(
+    and(eq(creativesTable.id, parseResult.data.id), eq(creativesTable.userId, userId))
+  );
   if (!row) { res.status(404).json({ error: "Criativo não encontrado" }); return; }
 
   const m = withMetrics(row);

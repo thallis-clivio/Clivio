@@ -1,13 +1,16 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import { withMetrics, filterByDateRange, generateSyntheticHistory } from "./creatives";
+import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
 // GET /dashboard/summary
-router.get("/dashboard/summary", async (req, res) => {
+router.get("/dashboard/summary", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
 
@@ -37,9 +40,10 @@ router.get("/dashboard/summary", async (req, res) => {
 });
 
 // GET /dashboard/decision-breakdown
-router.get("/dashboard/decision-breakdown", async (req, res) => {
+router.get("/dashboard/decision-breakdown", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
   const results = filtered.map(withMetrics);
@@ -51,9 +55,10 @@ router.get("/dashboard/decision-breakdown", async (req, res) => {
 });
 
 // GET /dashboard/performance-summary
-router.get("/dashboard/performance-summary", async (req, res) => {
+router.get("/dashboard/performance-summary", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
 
@@ -92,9 +97,10 @@ router.get("/dashboard/performance-summary", async (req, res) => {
 });
 
 // GET /dashboard/charts
-router.get("/dashboard/charts", async (req, res) => {
+router.get("/dashboard/charts", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
   const dateFilter = req.query.dateFilter as string | undefined;
-  const rows = await db.select().from(creativesTable);
+  const rows = await db.select().from(creativesTable).where(eq(creativesTable.userId, userId));
 
   // For the dashboard chart always use all creatives (date filter just changes the window)
   const results = rows.map(withMetrics);

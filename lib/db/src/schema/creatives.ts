@@ -4,6 +4,7 @@ import { z } from "zod/v4";
 
 export const creativesTable = pgTable("creatives", {
   id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().default(""),
   name: text("name").notNull(),
   date: text("date").notNull(),
   spend: real("spend").notNull(),
