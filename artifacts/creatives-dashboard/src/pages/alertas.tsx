@@ -52,6 +52,7 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: "critic
 
   function getAlertIcon() {
     if (creative.decision === "ESCALAR") return <Rocket className="w-4 h-4" />;
+    if (creative.decision === "LUCRATIVO") return <Rocket className="w-4 h-4" />;
     if (creative.pausarReason === "semVendas") return <Ban className="w-4 h-4" />;
     if (creative.pausarReason === "prejuizo") return <TrendingDown className="w-4 h-4" />;
     if (creative.monitorarReason === "decaindo") return <TrendingDown className="w-4 h-4" />;
