@@ -54,6 +54,15 @@ export const CreativeWithMetricsMonitorarReason = {
   decaindo: "decaindo",
 } as const;
 
+export type CreativeWithMetricsPausarReason =
+  | (typeof CreativeWithMetricsPausarReason)[keyof typeof CreativeWithMetricsPausarReason]
+  | null;
+
+export const CreativeWithMetricsPausarReason = {
+  semVendas: "semVendas",
+  prejuizo: "prejuizo",
+} as const;
+
 export type CreativeWithMetrics = CreateCreativeBody & {
   id: number;
   commission: number;
@@ -64,6 +73,7 @@ export type CreativeWithMetrics = CreateCreativeBody & {
   predictabilityLabel: CreativeWithMetricsPredictabilityLabel;
   decision: CreativeWithMetricsDecision;
   monitorarReason?: CreativeWithMetricsMonitorarReason;
+  pausarReason?: CreativeWithMetricsPausarReason;
 };
 
 export interface DashboardSummary {

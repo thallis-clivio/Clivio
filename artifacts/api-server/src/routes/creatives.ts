@@ -42,14 +42,15 @@ function computeTotalSales(c: {
 function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): {
   decision: "ESCALAR" | "MONITORAR" | "PAUSAR";
   monitorarReason: "lucrativo" | "decaindo" | null;
+  pausarReason: "semVendas" | "prejuizo" | null;
 } {
-  if (daysWithoutSales >= 2) return { decision: "PAUSAR", monitorarReason: null };
-  if (roas >= 2 && daysWithoutSales === 0) return { decision: "ESCALAR", monitorarReason: null };
+  if (daysWithoutSales >= 2) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
+  if (roas >= 2 && daysWithoutSales === 0) return { decision: "ESCALAR", monitorarReason: null, pausarReason: null };
   if (roas >= 1 && (roas < 2 || daysWithoutSales === 1)) {
     const reason = daysWithoutSales === 1 && roas >= 2 ? "decaindo" : "lucrativo";
-    return { decision: "MONITORAR", monitorarReason: reason };
+    return { decision: "MONITORAR", monitorarReason: reason, pausarReason: null };
   }
-  return { decision: "PAUSAR", monitorarReason: null };
+  return { decision: "PAUSAR", monitorarReason: null, pausarReason: "prejuizo" };
 }
 
 function computePredictability(
@@ -114,7 +115,7 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
   const totalSales = computeTotalSales(c);
   const roas = c.spend > 0 ? Math.round((commission / c.spend) * 100) / 100 : 0;
   const cpa = totalSales > 0 ? Math.round((c.spend / totalSales) * 100) / 100 : 0;
-  const { decision, monitorarReason } = computeDecision(roas, cpa, c.daysWithoutSales);
+  const { decision, monitorarReason, pausarReason } = computeDecision(roas, cpa, c.daysWithoutSales);
   const { score: predictabilityScore, label: predictabilityLabel } = computePredictability(roas, cpa, c.daysWithoutSales, totalSales);
   return {
     id: c.id,
@@ -137,6 +138,7 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
     predictabilityLabel,
     decision,
     monitorarReason,
+    pausarReason,
   };
 }
 

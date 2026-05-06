@@ -10,7 +10,7 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity, Rocket, Ban } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -43,6 +43,12 @@ function getDecisionColor(decision: string, monitorarReason?: string | null) {
     case "PAUSAR": return "bg-red-500/20 text-red-500 border-red-500/30";
     default: return "bg-gray-500/20 text-gray-500 border-gray-500/30";
   }
+}
+
+function getPausarLabel(reason?: string | null) {
+  if (reason === "semVendas") return "Sem Vendas";
+  if (reason === "prejuizo") return "Prejuízo";
+  return null;
 }
 
 function getPredictabilityColor(label: string) {
@@ -154,13 +160,25 @@ export default function CreativeDetail() {
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
                 <div className="flex flex-col gap-0.5">
                   <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
+                    {creative.decision === "ESCALAR" && <Rocket className="w-3 h-3" />}
                     {creative.decision === "MONITORAR" && (
                       creative.monitorarReason === "decaindo"
                         ? <TrendingDown className="w-3 h-3" />
                         : <Activity className="w-3 h-3" />
                     )}
+                    {creative.decision === "PAUSAR" && (
+                      creative.pausarReason === "semVendas"
+                        ? <Ban className="w-3 h-3" />
+                        : <TrendingDown className="w-3 h-3" />
+                    )}
                     {creative.decision}
                   </Badge>
+                  {creative.decision === "ESCALAR" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
+                      <Rocket className="w-2.5 h-2.5" />
+                      Acelerando
+                    </span>
+                  )}
                   {creative.decision === "MONITORAR" && creative.monitorarReason && (
                     <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
                       {creative.monitorarReason === "decaindo"
@@ -168,6 +186,15 @@ export default function CreativeDetail() {
                         : <Activity className="w-2.5 h-2.5" />
                       }
                       {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}
+                    </span>
+                  )}
+                  {creative.decision === "PAUSAR" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-semibold text-red-400">
+                      {creative.pausarReason === "semVendas"
+                        ? <Ban className="w-2.5 h-2.5" />
+                        : <TrendingDown className="w-2.5 h-2.5" />
+                      }
+                      {getPausarLabel(creative.pausarReason)}
                     </span>
                   )}
                 </div>

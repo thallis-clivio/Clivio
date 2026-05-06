@@ -409,6 +409,10 @@ components:
               type: string
               nullable: true
               enum: [lucrativo, decaindo]
+            pausarReason:
+              type: string
+              nullable: true
+              enum: [semVendas, prejuizo]
           required:
             - id
             - commission

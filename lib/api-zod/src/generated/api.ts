@@ -56,6 +56,7 @@ export const ListCreativesResponseItem = zod
       ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
+      pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
     }),
   );
 export const ListCreativesResponse = zod.array(ListCreativesResponseItem);
@@ -113,6 +114,7 @@ export const GetCreativeResponse = zod
       ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
+      pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
     }),
   );
 
@@ -166,6 +168,7 @@ export const UpdateCreativeResponse = zod
       ]),
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
+      pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
     }),
   );
 
@@ -264,6 +267,7 @@ export const GetDashboardSummaryResponse = zod.object({
         ]),
         decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
         monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
+        pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
       }),
     )
     .optional(),

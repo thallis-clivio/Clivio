@@ -22,7 +22,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer,
 } from "recharts";
-import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, ChevronsUpDown } from "lucide-react";
+import { Plus, ArrowRight, ArrowDown, ArrowUp, Activity, DollarSign, Target, TrendingUp, TrendingDown, ShoppingBag, ShoppingCart, ChevronsUpDown, Rocket, Ban } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { CreativeForm } from "@/components/creative-form";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +44,12 @@ function getDecisionColor(decision: string, monitorarReason?: string | null) {
 function getMonitorarLabel(reason?: string | null) {
   if (reason === "decaindo") return "Decaindo";
   if (reason === "lucrativo") return "Lucrativo";
+  return null;
+}
+
+function getPausarLabel(reason?: string | null) {
+  if (reason === "semVendas") return "Sem Vendas";
+  if (reason === "prejuizo") return "Prejuízo";
   return null;
 }
 
@@ -486,13 +492,25 @@ export default function Home() {
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <Badge variant="outline" className={`text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                            {creative.decision === "ESCALAR" && <Rocket className="w-2.5 h-2.5" />}
                             {creative.decision === "MONITORAR" && (
                               creative.monitorarReason === "decaindo"
                                 ? <TrendingDown className="w-2.5 h-2.5" />
                                 : <Activity className="w-2.5 h-2.5" />
                             )}
+                            {creative.decision === "PAUSAR" && (
+                              creative.pausarReason === "semVendas"
+                                ? <Ban className="w-2.5 h-2.5" />
+                                : <TrendingDown className="w-2.5 h-2.5" />
+                            )}
                             {creative.decision}
                           </Badge>
+                          {creative.decision === "ESCALAR" && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
+                              <Rocket className="w-2.5 h-2.5" />
+                              Acelerando
+                            </span>
+                          )}
                           {creative.decision === "MONITORAR" && (
                             <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
                               {creative.monitorarReason === "decaindo"
@@ -500,6 +518,15 @@ export default function Home() {
                                 : <Activity className="w-2.5 h-2.5" />
                               }
                               {getMonitorarLabel(creative.monitorarReason)}
+                            </span>
+                          )}
+                          {creative.decision === "PAUSAR" && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-red-400">
+                              {creative.pausarReason === "semVendas"
+                                ? <Ban className="w-2.5 h-2.5" />
+                                : <TrendingDown className="w-2.5 h-2.5" />
+                              }
+                              {getPausarLabel(creative.pausarReason)}
                             </span>
                           )}
                         </div>
