@@ -3,13 +3,17 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: API specification for Creatives Performance Dashboard
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: creatives
+    description: Creative performance management
+  - name: dashboard
+    description: Dashboard summary data
 paths:
   /healthz:
     get:
@@ -24,6 +28,188 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /creatives:
+    get:
+      operationId: listCreatives
+      tags: [creatives]
+      summary: List all creatives
+      parameters:
+        - name: decision
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ESCALAR, MONITORAR, OTIMIZAR, PAUSAR]
+        - name: sortBy
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [roas, spend, commission, name]
+        - name: sortOrder
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+      responses:
+        "200":
+          description: List of creatives with computed metrics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CreativeWithMetrics"
+    post:
+      operationId: createCreative
+      tags: [creatives]
+      summary: Create a new creative
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCreativeBody"
+      responses:
+        "201":
+          description: Created creative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativeWithMetrics"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /creatives/{id}:
+    get:
+      operationId: getCreative
+      tags: [creatives]
+      summary: Get a creative by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Creative with metrics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativeWithMetrics"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      operationId: updateCreative
+      tags: [creatives]
+      summary: Update a creative
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCreativeBody"
+      responses:
+        "200":
+          description: Updated creative
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreativeWithMetrics"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteCreative
+      tags: [creatives]
+      summary: Delete a creative
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted successfully
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /creatives/{id}/analyze:
+    post:
+      operationId: analyzeCreative
+      tags: [creatives]
+      summary: AI analysis of a creative's performance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Analysis result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalysisResult"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard KPI summary
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/decision-breakdown:
+    get:
+      operationId: getDecisionBreakdown
+      tags: [dashboard]
+      summary: Count of creatives per decision
+      responses:
+        "200":
+          description: Decision breakdown counts
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DecisionBreakdown"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +220,138 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    CreateCreativeBody:
+      type: object
+      properties:
+        name:
+          type: string
+        date:
+          type: string
+        spend:
+          type: number
+        sales5m:
+          type: integer
+        sales7m:
+          type: integer
+        sales9m:
+          type: integer
+        sales12m:
+          type: integer
+        sales16m:
+          type: integer
+        sales20m:
+          type: integer
+        ctr:
+          type: number
+        hookRate:
+          type: number
+        daysWithoutSales:
+          type: integer
+      required:
+        - name
+        - date
+        - spend
+        - sales5m
+        - sales7m
+        - sales9m
+        - sales12m
+        - sales16m
+        - sales20m
+        - ctr
+        - hookRate
+        - daysWithoutSales
+
+    CreativeWithMetrics:
+      allOf:
+        - $ref: "#/components/schemas/CreateCreativeBody"
+        - type: object
+          properties:
+            id:
+              type: integer
+            commission:
+              type: number
+            roas:
+              type: number
+            decision:
+              type: string
+              enum: [ESCALAR, MONITORAR, OTIMIZAR, PAUSAR]
+          required:
+            - id
+            - commission
+            - roas
+            - decision
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalSpend:
+          type: number
+        totalCommission:
+          type: number
+        averageRoas:
+          type: number
+        totalCreatives:
+          type: integer
+        topCreativeByRoas:
+          $ref: "#/components/schemas/CreativeWithMetrics"
+      required:
+        - totalSpend
+        - totalCommission
+        - averageRoas
+        - totalCreatives
+
+    DecisionBreakdown:
+      type: object
+      properties:
+        ESCALAR:
+          type: integer
+        MONITORAR:
+          type: integer
+        OTIMIZAR:
+          type: integer
+        PAUSAR:
+          type: integer
+      required:
+        - ESCALAR
+        - MONITORAR
+        - OTIMIZAR
+        - PAUSAR
+
+    AnalysisResult:
+      type: object
+      properties:
+        creativeId:
+          type: integer
+        decision:
+          type: string
+        explanation:
+          type: string
+        nextAction:
+          type: string
+        metrics:
+          type: object
+          properties:
+            roas:
+              type: number
+            commission:
+              type: number
+            spend:
+              type: number
+            ctr:
+              type: number
+            hookRate:
+              type: number
+      required:
+        - creativeId
+        - decision
+        - explanation
+        - nextAction
+        - metrics

@@ -1,0 +1,160 @@
+Build a full-stack web app for managing and analyzing paid traffic creatives performance (Meta Ads + affiliate model).
+
+Use:
+
+* Frontend: React (with clean modern UI)
+* Backend: Node.js (Express)
+* Database: SQLite (or simple JSON for MVP)
+
+---
+
+🎯 PURPOSE:
+
+Create a dashboard where users can input creative performance data and automatically receive decisions (scale, pause, optimize, monitor).
+
+---
+
+📊 DATA MODEL:
+
+Create a "creatives" table with:
+
+* id
+* name (string)
+* date (string or date)
+* spend (number)
+* sales_5m (number)
+* sales_7m (number)
+* sales_9m (number)
+* sales_12m (number)
+* sales_16m (number)
+* sales_20m (number)
+* ctr (number)
+* hook_rate (number)
+* days_without_sales (number)
+
+---
+
+💰 COMMISSION LOGIC:
+
+Each plan has commission:
+
+* 5m → 217
+* 7m → 300
+* 9m → 380
+* 12m → 460
+* 16m → 520
+* 20m → 650
+
+Calculate:
+commission =
+(5m * 217) +
+(7m * 300) +
+(9m * 380) +
+(12m * 460) +
+(16m * 520) +
+(20m * 650)
+
+---
+
+📈 METRICS:
+
+ROAS = commission / spend
+
+---
+
+🧠 DECISION ENGINE:
+
+* ROAS >= 2 → ESCALAR
+* ROAS 1.5–1.99 → MONITORAR
+* ROAS 1–1.49 → OTIMIZAR
+* ROAS < 1 → PAUSAR
+
+Override:
+
+* If days_without_sales >= 2 → PAUSAR
+
+CTR and Hook Rate:
+
+* Display only (diagnostic)
+
+---
+
+🖥️ FRONTEND:
+
+Create a modern dashboard with:
+
+1. TOP CARDS:
+
+* Total Spend
+* Total Commission
+* Average ROAS
+* Total Creatives
+
+2. TABLE:
+   Columns:
+
+* Name
+* Spend
+* Commission
+* ROAS
+* CTR
+* Hook Rate
+* Decision
+
+3. FORM:
+   Allow user to add/edit creatives easily
+
+---
+
+🎨 DESIGN:
+
+* Dark mode
+* Clean UI (similar to Stripe dashboard)
+* Rounded cards
+* Smooth spacing
+* Color-coded decisions:
+
+  * Green → ESCALAR
+  * Yellow → MONITORAR
+  * Orange → OTIMIZAR
+  * Red → PAUSAR
+
+---
+
+📊 EXTRA:
+
+* Add simple chart (ROAS per creative)
+* Filter by decision
+* Sort by ROAS
+
+---
+
+💾 STORAGE:
+
+* Save all creatives
+* Allow editing and deleting
+
+---
+
+🤖 BONUS FEATURE:
+
+Add a button:
+"Analyze Creative"
+
+When clicked, generate a short explanation:
+
+* Why it is scaling or not
+* Suggest next action
+
+---
+
+🎯 GOAL:
+
+The app must feel like a professional tool used by media buyers to make fast and accurate decisions.
+
+Focus on:
+
+* clarity
+* speed
+* usability
+* real decision-making power
