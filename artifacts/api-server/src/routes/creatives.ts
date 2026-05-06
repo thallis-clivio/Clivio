@@ -466,8 +466,10 @@ router.post("/creatives/:id/analyze", requireAuth, async (req, res) => {
   const { decision, roas, cpa, commission, spend, totalSales, daysWithoutSales, predictabilityScore, predictabilityLabel, monitorarReason, pausarReason } = m;
   const { text: salesBreakdown } = buildSalesBreakdown(row, rates);
 
-  const decisionLabel = decision === "ESCALAR" ? "ESCALAR"
+  const decisionLabel = decision === "ESCALAR" ? "ESCALAR — escalar budget imediatamente"
+    : decision === "LUCRATIVO" ? "LUCRATIVO — rentável, manter investimento"
     : decision === "MONITORAR" ? `MONITORAR (${monitorarReason === "decaindo" ? "em queda" : "lucrativo"})`
+    : decision === "ATENCAO" ? "ATENÇÃO — ROAS marginal (1–2×), avaliar otimizações"
     : `PAUSAR (${pausarReason === "semVendas" ? "sem vendas" : "prejuízo"})`;
 
   const prompt = `Você é um analista sênior de mídia paga especializado em campanhas CTWA (Click-to-WhatsApp) no Meta Ads para o mercado brasileiro, com foco em produtos de assinatura vendidos via comissão de afiliado.

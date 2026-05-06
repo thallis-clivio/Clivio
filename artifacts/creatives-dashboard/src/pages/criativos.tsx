@@ -60,7 +60,7 @@ function getDaysLabel(days: number) {
   if (days === 0) return { text: "Hoje", color: "text-green-400" };
   if (days === 1) return { text: "1 dia", color: "text-yellow-400" };
   if (days === 2) return { text: "2 dias", color: "text-orange-400" };
-  return { text: `${days} dias`, color: "text-red-400" };
+  return { text: "3+ dias", color: "text-red-400" };
 }
 
 function getPredictabilityColor(label: string) {
