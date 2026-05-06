@@ -368,7 +368,7 @@ export const HandlePaytWebhookResponse = zod.object({
  */
 export const SimulateSaleBody = zod.object({
   creativeName: zod.string(),
-  plan: zod.enum(["5m", "7m", "9m", "12m", "16m", "20m"]),
+  plan: zod.enum(["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]),
   cancelled: zod.boolean().optional(),
   userId: zod
     .string()

@@ -602,7 +602,7 @@ components:
           type: string
         plan:
           type: string
-          enum: ["5m", "7m", "9m", "12m", "16m", "20m"]
+          enum: ["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]
         cancelled:
           type: boolean
         userId:

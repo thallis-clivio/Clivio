@@ -8,6 +8,8 @@ export const creativesTable = pgTable("creatives", {
   name: text("name").notNull(),
   date: text("date").notNull(),
   spend: real("spend").notNull(),
+  sales2m: integer("sales_2m").notNull().default(0),
+  sales3m: integer("sales_3m").notNull().default(0),
   sales5m: integer("sales_5m").notNull().default(0),
   sales7m: integer("sales_7m").notNull().default(0),
   sales9m: integer("sales_9m").notNull().default(0),

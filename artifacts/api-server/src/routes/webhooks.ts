@@ -5,6 +5,8 @@ import { sql, eq, and } from "drizzle-orm";
 const router = Router();
 
 const PLAN_FIELDS = {
+  "2m": "sales2m",
+  "3m": "sales3m",
   "5m": "sales5m",
   "7m": "sales7m",
   "9m": "sales9m",

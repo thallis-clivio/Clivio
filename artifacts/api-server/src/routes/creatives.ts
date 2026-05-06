@@ -14,30 +14,34 @@ import { requireAuth } from "../middlewares/requireAuth";
 
 const router = Router();
 
+// Commission values (BRL) at 54% base rate — Rosa Oriental / Payt affiliate table
 const COMMISSION_RATES = {
-  sales5m: 217,
-  sales7m: 300,
-  sales9m: 380,
-  sales12m: 460,
-  sales16m: 520,
-  sales20m: 650,
+  sales2m: 161.38,
+  sales3m: 187.38,
+  sales5m: 241.38,
+  sales7m: 295.38,
+  sales9m: 376.38,
+  sales12m: 484.38,
+  sales16m: 562.38,
+  sales20m: 1026.38,
 } as const;
 
 function computeCommission(c: {
-  sales5m: number; sales7m: number; sales9m: number;
-  sales12m: number; sales16m: number; sales20m: number;
+  sales2m: number; sales3m: number; sales5m: number; sales7m: number;
+  sales9m: number; sales12m: number; sales16m: number; sales20m: number;
 }): number {
   return (
-    c.sales5m * 217 + c.sales7m * 300 + c.sales9m * 380 +
-    c.sales12m * 460 + c.sales16m * 520 + c.sales20m * 650
+    c.sales2m * 161.38 + c.sales3m * 187.38 +
+    c.sales5m * 241.38 + c.sales7m * 295.38 + c.sales9m * 376.38 +
+    c.sales12m * 484.38 + c.sales16m * 562.38 + c.sales20m * 1026.38
   );
 }
 
 function computeTotalSales(c: {
-  sales5m: number; sales7m: number; sales9m: number;
-  sales12m: number; sales16m: number; sales20m: number;
+  sales2m: number; sales3m: number; sales5m: number; sales7m: number;
+  sales9m: number; sales12m: number; sales16m: number; sales20m: number;
 }): number {
-  return c.sales5m + c.sales7m + c.sales9m + c.sales12m + c.sales16m + c.sales20m;
+  return c.sales2m + c.sales3m + c.sales5m + c.sales7m + c.sales9m + c.sales12m + c.sales16m + c.sales20m;
 }
 
 function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): {

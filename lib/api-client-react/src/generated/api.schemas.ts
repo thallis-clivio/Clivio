@@ -157,6 +157,8 @@ export type SimulateSaleBodyPlan =
   (typeof SimulateSaleBodyPlan)[keyof typeof SimulateSaleBodyPlan];
 
 export const SimulateSaleBodyPlan = {
+  "2m": "2m",
+  "3m": "3m",
   "5m": "5m",
   "7m": "7m",
   "9m": "9m",

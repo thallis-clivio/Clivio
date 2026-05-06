@@ -38,7 +38,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 
 - **Auth**: Clerk with clerkProxyMiddleware mounted before body parsers in app.ts. `requireAuth` middleware on all creatives/dashboard routes; webhooks unprotected (Payt can't send session tokens)
 - **Per-user isolation**: `userId text NOT NULL DEFAULT ''` column on creativesTable; all DB queries filter by `eq(creativesTable.userId, userId)`. Webhooks find creatives by name across all users.
-- Commission computed server-side (5m×$217, 7m×$300, 9m×$380, 12m×$460, 16m×$520, 20m×$650)
+- Commission computed server-side in BRL at 54% base Payt rate: 2m×R$161,38 / 3m×R$187,38 / 5m×R$241,38 / 7m×R$295,38 / 9m×R$376,38 / 12m×R$484,38 / 16m×R$562,38 / 20m×R$1026,38
 - ROAS = commission / spend; CPA = spend / totalSales; both computed at read time (not stored)
 - Decision logic: daysWithoutSales >= 2 → PAUSAR; ROAS >= 2 AND days=0 → ESCALAR; ROAS >= 1 AND (ROAS < 2 OR days=1) → MONITORAR(reason); else PAUSAR
 - `hookRate` column kept in DB (`real NOT NULL DEFAULT 0`), omitted from `insertCreativeSchema` and removed from API request body
