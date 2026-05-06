@@ -169,6 +169,8 @@ export interface SimulateSaleBody {
   creativeName: string;
   plan: SimulateSaleBodyPlan;
   cancelled?: boolean;
+  /** Optional Clerk userId to scope the lookup to a specific user's creatives */
+  userId?: string;
 }
 
 export interface PaytWebhookPayload {

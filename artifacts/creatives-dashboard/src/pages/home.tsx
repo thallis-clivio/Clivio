@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useUser } from "@clerk/react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -223,6 +224,7 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
 }
 
 export default function Home() {
+  const { user } = useUser();
   const [dateFilter, setDateFilter] = useState<DateFilter>("weekly");
   const [decisionFilter, setDecisionFilter] = useState<CreativeWithMetricsDecision | "ALL">("ALL");
   const [sortBy, setSortBy] = useState<ListCreativesSortBy>("roas");
@@ -378,7 +380,7 @@ export default function Home() {
                       disabled={!simCreative || simulateMutation.isPending}
                       onClick={() => {
                         setSimResult(null);
-                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan } });
+                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, userId: user?.id } });
                       }}
                     >
                       {simulateMutation.isPending ? "Simulando..." : "Simular +1 Venda"}
@@ -389,7 +391,7 @@ export default function Home() {
                       disabled={!simCreative || simulateMutation.isPending}
                       onClick={() => {
                         setSimResult(null);
-                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, cancelled: true } });
+                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, cancelled: true, userId: user?.id } });
                       }}
                     >
                       −1 (Cancelar)

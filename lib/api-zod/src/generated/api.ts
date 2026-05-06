@@ -370,6 +370,12 @@ export const SimulateSaleBody = zod.object({
   creativeName: zod.string(),
   plan: zod.enum(["5m", "7m", "9m", "12m", "16m", "20m"]),
   cancelled: zod.boolean().optional(),
+  userId: zod
+    .string()
+    .optional()
+    .describe(
+      "Optional Clerk userId to scope the lookup to a specific user's creatives",
+    ),
 });
 
 export const SimulateSaleResponse = zod.object({

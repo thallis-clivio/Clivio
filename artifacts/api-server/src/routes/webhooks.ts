@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, creativesTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 
 const router = Router();
 
@@ -77,8 +77,23 @@ router.post("/webhooks/payt", async (req, res) => {
     return;
   }
 
-  const rows = await db.select().from(creativesTable);
-  const creative = rows.find(r => r.name.toLowerCase() === utmContent.toLowerCase());
+  // Support scoped format "userId::creativeName" for per-user isolation.
+  // Falls back to global name search for backward compatibility with legacy setups.
+  let creative: typeof creativesTable.$inferSelect | undefined;
+  if (utmContent.includes("::")) {
+    const sepIdx = utmContent.indexOf("::");
+    const scopedUserId = utmContent.slice(0, sepIdx);
+    const creativeName = utmContent.slice(sepIdx + 2);
+    const rows = await db.select().from(creativesTable).where(
+      and(eq(creativesTable.userId, scopedUserId), eq(creativesTable.name, creativeName))
+    );
+    creative = rows[0];
+    req.log.info({ scopedUserId, creativeName }, "payt webhook: scoped utm_content lookup");
+  } else {
+    const rows = await db.select().from(creativesTable);
+    creative = rows.find(r => r.name.toLowerCase() === utmContent.toLowerCase());
+    req.log.info({ utmContent }, "payt webhook: global name lookup (set utm_content to userId::creativeName for scoped routing)");
+  }
 
   if (!creative) {
     req.log.warn({ utmContent }, "payt webhook: creative not found");
@@ -99,11 +114,13 @@ router.post("/webhooks/payt", async (req, res) => {
 });
 
 // POST /webhooks/simulate — test endpoint, no auth required
+// userId param scopes the lookup to a specific user's creatives (prevents cross-tenant writes)
 router.post("/webhooks/simulate", async (req, res) => {
-  const { creativeName, plan, cancelled } = req.body as {
+  const { creativeName, plan, cancelled, userId } = req.body as {
     creativeName: string;
     plan: string;
     cancelled?: boolean;
+    userId?: string;
   };
 
   if (!creativeName || !plan) {
@@ -111,8 +128,16 @@ router.post("/webhooks/simulate", async (req, res) => {
     return;
   }
 
-  const rows = await db.select().from(creativesTable);
-  const creative = rows.find(r => r.name.toLowerCase() === creativeName.toLowerCase());
+  let creative: typeof creativesTable.$inferSelect | undefined;
+  if (userId) {
+    const rows = await db.select().from(creativesTable).where(
+      and(eq(creativesTable.userId, userId), eq(creativesTable.name, creativeName))
+    );
+    creative = rows[0];
+  } else {
+    const rows = await db.select().from(creativesTable);
+    creative = rows.find(r => r.name.toLowerCase() === creativeName.toLowerCase());
+  }
 
   if (!creative) {
     res.status(200).json({ ok: false, reason: "creative_not_found", utmContent: creativeName });

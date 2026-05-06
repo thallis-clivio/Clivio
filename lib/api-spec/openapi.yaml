@@ -605,6 +605,9 @@ components:
           enum: ["5m", "7m", "9m", "12m", "16m", "20m"]
         cancelled:
           type: boolean
+        userId:
+          type: string
+          description: Optional Clerk userId to scope the lookup to a specific user's creatives
       required:
         - creativeName
         - plan
