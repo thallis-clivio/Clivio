@@ -443,7 +443,12 @@ export default function Home() {
                       <TableCell className="text-right font-mono text-sm">{creative.totalSales}</TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
-                          <Badge variant="outline" className={`font-mono text-xs ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                          <Badge variant="outline" className={`font-mono text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                            {creative.decision === "MONITORAR" && (
+                              creative.monitorarReason === "decaindo"
+                                ? <TrendingDown className="w-2.5 h-2.5" />
+                                : <Activity className="w-2.5 h-2.5" />
+                            )}
                             {creative.decision}
                           </Badge>
                           {creative.decision === "MONITORAR" && (

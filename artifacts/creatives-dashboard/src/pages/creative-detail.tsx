@@ -152,17 +152,25 @@ export default function CreativeDetail() {
               <h2 className="text-3xl font-bold tracking-tight font-mono" data-testid="text-creative-name">{creative.name}</h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
-                <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
-                  {creative.decision === "MONITORAR" && (
-                    creative.monitorarReason === "decaindo"
-                      ? <TrendingDown className="w-3 h-3" />
-                      : <Activity className="w-3 h-3" />
-                  )}
-                  {creative.decision}
+                <div className="flex flex-col gap-0.5">
+                  <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
+                    {creative.decision === "MONITORAR" && (
+                      creative.monitorarReason === "decaindo"
+                        ? <TrendingDown className="w-3 h-3" />
+                        : <Activity className="w-3 h-3" />
+                    )}
+                    {creative.decision}
+                  </Badge>
                   {creative.decision === "MONITORAR" && creative.monitorarReason && (
-                    <span className="opacity-70 font-normal">· {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}</span>
+                    <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
+                      {creative.monitorarReason === "decaindo"
+                        ? <TrendingDown className="w-2.5 h-2.5" />
+                        : <Activity className="w-2.5 h-2.5" />
+                      }
+                      {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}
+                    </span>
                   )}
-                </Badge>
+                </div>
                 <Badge variant="outline" className={`border text-xs ${getPredictabilityColor(creative.predictabilityLabel)}`} data-testid="badge-predictability">
                   {creative.predictabilityLabel}
                 </Badge>
