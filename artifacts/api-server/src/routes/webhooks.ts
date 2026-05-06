@@ -1,6 +1,7 @@
 import { Router } from "express";
-import { db, creativesTable } from "@workspace/db";
+import { db, creativesTable, productSettingsTable } from "@workspace/db";
 import { sql, eq, and } from "drizzle-orm";
+import { getCommissionRates } from "./creatives";
 
 const router = Router();
 
@@ -15,14 +16,30 @@ const PLAN_FIELDS = {
   "20m": "sales20m",
 } as const;
 
-type PlanField = typeof PLAN_FIELDS[keyof typeof PLAN_FIELDS];
+const PLAN_RATE_KEYS = {
+  "2m": "commission2m",
+  "3m": "commission3m",
+  "5m": "commission5m",
+  "7m": "commission7m",
+  "9m": "commission9m",
+  "12m": "commission12m",
+  "16m": "commission16m",
+  "20m": "commission20m",
+} as const;
+
+type PlanKey = keyof typeof PLAN_FIELDS;
+type PlanField = typeof PLAN_FIELDS[PlanKey];
+
+function detectPlanKey(productName: string): PlanKey {
+  const lower = productName.toLowerCase();
+  for (const key of Object.keys(PLAN_FIELDS) as PlanKey[]) {
+    if (lower.includes(key)) return key;
+  }
+  return "5m";
+}
 
 function detectPlanField(productName: string): PlanField {
-  const lower = productName.toLowerCase();
-  for (const [key, field] of Object.entries(PLAN_FIELDS)) {
-    if (lower.includes(key)) return field as PlanField;
-  }
-  return "sales5m";
+  return PLAN_FIELDS[detectPlanKey(productName)];
 }
 
 function extractUtmContent(payload: Record<string, unknown>): string | null {
@@ -40,6 +57,18 @@ function extractProductName(payload: Record<string, unknown>): string {
   const product = payload.product as Record<string, unknown> | undefined;
   if (product && typeof product.name === "string") return product.name;
   return "";
+}
+
+async function getMainProductName(userId: string): Promise<string> {
+  const [row] = await db.select().from(productSettingsTable).where(
+    eq(productSettingsTable.userId, userId)
+  );
+  return row?.mainProductName ?? "";
+}
+
+function isLtvSale(productName: string, mainProductName: string): boolean {
+  if (!mainProductName.trim()) return false;
+  return !productName.toLowerCase().includes(mainProductName.toLowerCase().trim());
 }
 
 // POST /webhooks/payt
@@ -104,31 +133,49 @@ router.post("/webhooks/payt", async (req, res) => {
   }
 
   const productName = extractProductName(payload);
-  const planField = detectPlanField(productName);
+  const planKey = detectPlanKey(productName);
+  const planField = PLAN_FIELDS[planKey];
   const delta = isApproved ? 1 : -1;
 
-  const setFields: Record<string, unknown> = {
-    [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
-  };
-  if (isApproved) setFields.lastSaleAt = new Date();
+  // Classify: front sale vs LTV/cross-sell
+  const mainProductName = await getMainProductName(creative.userId);
+  const ltv = isLtvSale(productName, mainProductName);
 
-  await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
-
-  req.log.info({ creativeId: creative.id, planField, delta, status }, "payt webhook processed");
-  res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
+  if (ltv) {
+    // LTV sale: accumulate commission into ltvCommission, do NOT update lastSaleAt or salesXm
+    const rates = await getCommissionRates(creative.userId);
+    const rateKey = PLAN_RATE_KEYS[planKey];
+    const rate = rates[rateKey];
+    await db.update(creativesTable).set({
+      ltvCommission: sql`GREATEST(${creativesTable.ltvCommission} + ${rate * delta}, 0)`,
+    }).where(sql`id = ${creative.id}`);
+    req.log.info({ creativeId: creative.id, planKey, rate, delta, productName }, "payt webhook: LTV sale processed");
+    res.status(200).json({ ok: true, creativeId: creative.id, planField: "ltvCommission", delta, ltv: true });
+  } else {
+    // Front sale: increment salesXm + update lastSaleAt
+    const setFields: Record<string, unknown> = {
+      [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
+    };
+    if (isApproved) setFields.lastSaleAt = new Date();
+    await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
+    req.log.info({ creativeId: creative.id, planField, delta, status }, "payt webhook: front sale processed");
+    res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
+  }
 });
 
 // POST /webhooks/simulate — test endpoint, no auth required
 // Accepts either:
 //   utmContent: "userId::creativeName"  (mirrors the real Payt webhook format — preferred)
 //   creativeName + optional userId       (legacy separate-field form — still supported)
+// isLtv: if true, treats as LTV sale (adds to ltvCommission, skips lastSaleAt)
 router.post("/webhooks/simulate", async (req, res) => {
-  const { utmContent, creativeName, plan, cancelled, userId } = req.body as {
+  const { utmContent, creativeName, plan, cancelled, userId, isLtv } = req.body as {
     utmContent?: string;
     creativeName?: string;
     plan: string;
     cancelled?: boolean;
     userId?: string;
+    isLtv?: boolean;
   };
 
   if (!plan) {
@@ -175,18 +222,29 @@ router.post("/webhooks/simulate", async (req, res) => {
     return;
   }
 
-  const planField = PLAN_FIELDS[plan as keyof typeof PLAN_FIELDS] ?? "sales5m";
+  const planKey = plan as PlanKey;
+  const planField = PLAN_FIELDS[planKey] ?? "sales5m";
   const delta = cancelled ? -1 : 1;
 
-  const setFields: Record<string, unknown> = {
-    [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
-  };
-  if (!cancelled) setFields.lastSaleAt = new Date();
-
-  await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
-
-  req.log.info({ creativeId: creative.id, planField, delta }, "simulate webhook processed");
-  res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
+  if (isLtv) {
+    // LTV simulate: add commission to ltvCommission, skip lastSaleAt
+    const rates = await getCommissionRates(creative.userId);
+    const rateKey = (PLAN_RATE_KEYS[planKey] ?? "commission5m") as keyof typeof rates;
+    const rate = rates[rateKey];
+    await db.update(creativesTable).set({
+      ltvCommission: sql`GREATEST(${creativesTable.ltvCommission} + ${rate * delta}, 0)`,
+    }).where(sql`id = ${creative.id}`);
+    req.log.info({ creativeId: creative.id, planKey, rate, delta }, "simulate: LTV processed");
+    res.status(200).json({ ok: true, creativeId: creative.id, planField: "ltvCommission", delta, ltv: true });
+  } else {
+    const setFields: Record<string, unknown> = {
+      [planField]: sql`GREATEST(${creativesTable[planField as keyof typeof creativesTable]} + ${delta}, 0)`,
+    };
+    if (!cancelled) setFields.lastSaleAt = new Date();
+    await db.update(creativesTable).set(setFields).where(sql`id = ${creative.id}`);
+    req.log.info({ creativeId: creative.id, planField, delta }, "simulate webhook processed");
+    res.status(200).json({ ok: true, creativeId: creative.id, planField, delta });
+  }
 });
 
 export default router;

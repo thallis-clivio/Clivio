@@ -46,6 +46,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - Desempenho score (0–100): corte direto (days>=3 ou days>=2 com ROAS<3.5) → RUIM capped 30; else ROAS(0–60: >=3.5→60,>=3→55,>=2→50,>=1.5→30,>=1→15) + consistência(0–40: days=0→40,days=1→30,days=2(ROAS>=3.5)→8); ROAS<1 → RUIM cap 20; >=70→EXCELENTE, >=40→BOM, else RUIM
 - AI analysis via Claude (`claude-sonnet-4-6`) — `POST /api/creatives/:id/analyze` streams SSE from Anthropic via Replit AI Integrations (`AI_INTEGRATIONS_ANTHROPIC_BASE_URL` + `AI_INTEGRATIONS_ANTHROPIC_API_KEY` auto-provisioned). Frontend uses fetch + ReadableStream; `ClaudeMarkdown` renders **bold** headers and bullet points inline. No conversations DB needed (one-shot analysis).
 - Orval `schemas` option removed from zod config to prevent duplicate type exports; `lib/api-zod/src/index.ts` must only export `./generated/api`
+- **LTV tracking**: `ltvCommission real NOT NULL DEFAULT 0` on creativesTable + `product_settings` table (userId, mainProductName). Payt webhook: if product name doesn't contain `mainProductName` → LTV sale (adds commission to `ltvCommission`, skips `lastSaleAt`/`salesXm`). GET/PUT `/api/settings/products` endpoint. Simulate endpoint accepts `isLtv: boolean`. ROAS is always front-only.
 
 ## Product
 
@@ -54,10 +55,10 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - **Sign-up** (`/sign-up`): Clerk-hosted, dark theme, "Criar conta no Clivio"
 - **Dashboard** (`/dashboard`): 5 KPI cards, date filter tabs (Hoje/7 dias/15 dias/30 dias/Personalizado), multi-metric chart, performance summary — NO creatives table
 - **Central de Criativos** (`/criativos`): ALL creatives (always `dateFilter: "all"`), sort + decision filter, "Adicionar Criativo" button — never filtered by date
-- **Relatórios** (`/relatorios`): Date-filtered performance report; 3 KPI summary + **Pódio** (top 3 by commission, gold/silver/bronze) + **Mix de Planos** (horizontal bars per plan type 5m–20m) + **Concentração de Comissão** (80/20 Pareto) + sortable table + CSV export
+- **Relatórios** (`/relatorios`): Date-filtered performance report; 3 KPI summary + **Pódio** (top 3 by commission, gold/silver/bronze) + **Front vs LTV** (commission split front/cross-sell) + **Concentração de Comissão** (80/20 Pareto) + sortable table + CSV export
 - **Alertas** (`/alertas`): Real-time actionable alerts from decision engine — PAUSAR / MONITORAR decaindo / ESCALAR sections; stats banner (investimento em risco, comissão potencial)
 - **Creative detail** (`/creatives/:id`): Full metrics breakdown, predictability bar, "Analisar com Claude" button streams real-time Claude analysis (Diagnóstico / Pontos críticos / Próximos passos)
-- **Configurações** (`/settings`): Per-user commission settings + **URL base do Checkout** (localStorage: `clivio_payt_checkout_url`) — configures base Payt checkout URL so tracking links are auto-generated per creative
+- **Configurações** (`/settings`): **Produto Principal** (main product name for LTV classification, DB-persisted) + Per-user commission settings + **URL base do Checkout** (localStorage: `clivio_payt_checkout_url`) — configures base Payt checkout URL so tracking links are auto-generated per creative
 - Sidebar grouped: Análise (Visão Geral / Central de Criativos / Relatórios) | Operação (Alertas) | Conta (Configurações)
 - Payt postback at `/api/webhooks/payt` (unprotected, validates PAYT_INTEGRATION_KEY); utm_content supports `userId::creativeName` for per-user routing, falls back to global name search for legacy values
 - **UTM tracking links**: auto-generated per creative as `{paytUrl}?utm_content={userId}::{creativeName}`; base URL stored in localStorage; copy button on every criativos row + tracking strip on creative detail page; configured in Configurações → Link de Rastreamento Automático

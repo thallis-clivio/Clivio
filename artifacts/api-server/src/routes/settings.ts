@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, commissionSettingsTable } from "@workspace/db";
+import { db, commissionSettingsTable, productSettingsTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { requireAuth } from "../middlewares/requireAuth";
 import { DEFAULT_RATES, CommissionRates } from "./creatives";
@@ -53,6 +53,31 @@ router.put("/settings/commissions", requireAuth, async (req, res) => {
     });
 
   res.json(rates);
+});
+
+// GET /settings/products
+router.get("/settings/products", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const [row] = await db.select().from(productSettingsTable).where(
+    eq(productSettingsTable.userId, userId)
+  );
+  res.json({ mainProductName: row?.mainProductName ?? "" });
+});
+
+// PUT /settings/products
+router.put("/settings/products", requireAuth, async (req, res) => {
+  const userId = (req as typeof req & { userId: string }).userId;
+  const { mainProductName } = req.body as { mainProductName?: string };
+  const name = (mainProductName ?? "").trim();
+
+  await db.insert(productSettingsTable)
+    .values({ userId, mainProductName: name })
+    .onConflictDoUpdate({
+      target: productSettingsTable.userId,
+      set: { mainProductName: name, updatedAt: new Date() },
+    });
+
+  res.json({ mainProductName: name });
 });
 
 export default router;

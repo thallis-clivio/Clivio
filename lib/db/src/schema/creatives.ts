@@ -16,6 +16,13 @@ export const commissionSettingsTable = pgTable("commission_settings", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const productSettingsTable = pgTable("product_settings", {
+  id: serial("id").primaryKey(),
+  userId: text("user_id").notNull().unique(),
+  mainProductName: text("main_product_name").notNull().default(""),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const creativesTable = pgTable("creatives", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().default(""),
@@ -31,10 +38,8 @@ export const creativesTable = pgTable("creatives", {
   sales16m: integer("sales_16m").notNull().default(0),
   sales20m: integer("sales_20m").notNull().default(0),
   ctr: real("ctr").notNull().default(0),
-  // hookRate kept in DB for backward compatibility, defaulted to 0
   hookRate: real("hook_rate").notNull().default(0),
-  // lastSaleAt: updated automatically on every approved postback (Payt/simulate)
-  // daysWithoutSales is computed at read time from this field — NOT stored
+  ltvCommission: real("ltv_commission").notNull().default(0),
   lastSaleAt: timestamp("last_sale_at"),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -44,6 +49,7 @@ export const insertCreativeSchema = createInsertSchema(creativesTable).omit({
   createdAt: true,
   hookRate: true,
   lastSaleAt: true,
+  ltvCommission: true,
 });
 
 export type InsertCreative = z.infer<typeof insertCreativeSchema>;

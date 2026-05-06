@@ -188,6 +188,7 @@ export function withMetrics(c: typeof creativesTable.$inferSelect, rates: Commis
     ctr: c.ctr,
     daysWithoutSales,
     commission: Math.round(commission * 100) / 100,
+    ltvCommission: Math.round((c.ltvCommission ?? 0) * 100) / 100,
     roas,
     cpa,
     totalSales,

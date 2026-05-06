@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
 import {
   Download, ArrowRight, ArrowDown, ArrowUp, ChevronsUpDown,
-  Trophy, Medal, Award, Layers, PieChart, TrendingUp,
+  Trophy, Medal, Award, PieChart, TrendingUp, SplitSquareHorizontal,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,15 +25,6 @@ const DATE_FILTER_LABELS: Record<Exclude<DateFilter, "custom">, string> = {
   monthly: "15 dias",
   all: "30 dias",
 };
-
-const PLAN_FIELDS = [
-  { key: "sales5m",  label: "5 meses",  color: "#818cf8" },
-  { key: "sales7m",  label: "7 meses",  color: "#6366f1" },
-  { key: "sales9m",  label: "9 meses",  color: "#4f46e5" },
-  { key: "sales12m", label: "12 meses", color: "#7c3aed" },
-  { key: "sales16m", label: "16 meses", color: "#9333ea" },
-  { key: "sales20m", label: "20 meses", color: "#c026d3" },
-] as const;
 
 const MEDAL = [
   { Icon: Trophy, color: "text-yellow-400", ring: "ring-yellow-400/20 bg-yellow-400/5",  label: "1º" },
@@ -91,14 +82,11 @@ export default function Relatorios() {
     return [...creatives].filter(c => c.commission > 0).sort((a, b) => b.commission - a.commission).slice(0, 3);
   }, [creatives]);
 
-  const planMix = useMemo(() => {
-    if (!creatives || creatives.length === 0) return [];
-    const totals = PLAN_FIELDS.map(p => ({
-      label: p.label,
-      color: p.color,
-      vendas: creatives.reduce((sum, c) => sum + ((c as unknown as Record<string, unknown>)[p.key] as number ?? 0), 0),
-    }));
-    return totals.filter(p => p.vendas > 0).sort((a, b) => b.vendas - a.vendas);
+  const ltvData = useMemo(() => {
+    if (!creatives) return { frontCommission: 0, ltvCommission: 0, total: 0 };
+    const front = creatives.reduce((s, c) => s + c.commission, 0);
+    const ltv = creatives.reduce((s, c) => s + (c.ltvCommission ?? 0), 0);
+    return { frontCommission: front, ltvCommission: ltv, total: front + ltv };
   }, [creatives]);
 
   const pareto = useMemo(() => {
@@ -264,43 +252,46 @@ export default function Relatorios() {
           </CardContent>
         </Card>
 
-        {/* Mix de Planos + Pareto */}
+        {/* Front vs LTV + Pareto */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-          {/* Mix de Planos */}
+          {/* Front vs LTV */}
           <Card className="border-border/50 bg-card/50">
             <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Layers className="h-4 w-4 text-primary" />
-                <CardTitle className="text-base">Mix de Planos</CardTitle>
+                <SplitSquareHorizontal className="h-4 w-4 text-primary" />
+                <CardTitle className="text-base">Front vs LTV</CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground">Quais planos de assinatura mais vendem — oriente criativos e copy para o plano mais comprado.</p>
+              <p className="text-xs text-muted-foreground">Comissão front (produto principal, conta no ROAS) vs comissão LTV (cross-sells, não conta no ROAS).</p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="space-y-2">{[1,2,3,4].map(i => <Skeleton key={i} className="h-8 w-full" />)}</div>
-              ) : planMix.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4">Nenhuma venda registrada neste período.</p>
+                <div className="space-y-3">{[1,2].map(i => <Skeleton key={i} className="h-12 w-full" />)}</div>
+              ) : ltvData.total === 0 ? (
+                <p className="text-sm text-muted-foreground py-4">Nenhuma comissão gerada neste período.</p>
               ) : (
-                <div className="space-y-3 pt-1">
-                  {planMix.map(p => {
-                    const total = planMix.reduce((s, x) => s + x.vendas, 0);
-                    const pct   = total > 0 ? Math.round((p.vendas / total) * 100) : 0;
-                    return (
-                      <div key={p.label} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="font-medium text-foreground">{p.label}</span>
-                          <span className="tabular-nums text-muted-foreground">{p.vendas} venda{p.vendas !== 1 ? "s" : ""} · {pct}%</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-muted overflow-hidden">
-                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: p.color }} />
-                        </div>
+                <div className="space-y-4 pt-1">
+                  {[
+                    { label: "Comissão Front", value: ltvData.frontCommission, color: "bg-primary", textColor: "text-primary", pct: ltvData.total > 0 ? Math.round((ltvData.frontCommission / ltvData.total) * 100) : 0 },
+                    { label: "Comissão LTV", value: ltvData.ltvCommission, color: "bg-violet-500", textColor: "text-violet-400", pct: ltvData.total > 0 ? Math.round((ltvData.ltvCommission / ltvData.total) * 100) : 0 },
+                  ].map(row => (
+                    <div key={row.label} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-medium text-foreground">{row.label}</span>
+                        <span className={`tabular-nums font-semibold ${row.textColor}`}>{formatCurrency(row.value)} · {row.pct}%</span>
                       </div>
-                    );
-                  })}
-                  <p className="text-[11px] text-muted-foreground pt-1">
-                    {planMix.reduce((s, p) => s + p.vendas, 0)} vendas totais no período
-                  </p>
+                      <div className="h-2.5 rounded-full bg-muted overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${row.color}`} style={{ width: `${row.pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="pt-1 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Total combinado</span>
+                    <span className="font-semibold text-foreground tabular-nums">{formatCurrency(ltvData.total)}</span>
+                  </div>
+                  {ltvData.ltvCommission === 0 && (
+                    <p className="text-[11px] text-muted-foreground">Configure o <strong>Produto Principal</strong> em Configurações para começar a rastrear LTV.</p>
+                  )}
                 </div>
               )}
             </CardContent>

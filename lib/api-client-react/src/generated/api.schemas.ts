@@ -5,6 +5,11 @@
  * API specification for Creatives Performance Dashboard
  * OpenAPI spec version: 0.1.0
  */
+export interface ProductSettings {
+  /** Name of the main (front) product. Cross-sell products are tracked as LTV commission. */
+  mainProductName: string;
+}
+
 export interface CommissionSettings {
   commission2m: number;
   commission3m: number;
@@ -85,6 +90,8 @@ export type CreativeWithMetrics = CreateCreativeBody & {
   decision: CreativeWithMetricsDecision;
   monitorarReason?: CreativeWithMetricsMonitorarReason;
   pausarReason?: CreativeWithMetricsPausarReason;
+  /** Accumulated LTV/cross-sell commission (not counted in ROAS) */
+  ltvCommission: number;
 };
 
 export interface DashboardSummary {
@@ -187,6 +194,8 @@ export interface SimulateSaleBody {
   creativeName?: string;
   plan: SimulateSaleBodyPlan;
   cancelled?: boolean;
+  /** If true, treats the sale as LTV/cross-sell (adds to ltvCommission, skips lastSaleAt) */
+  isLtv?: boolean;
   /** Optional Clerk userId to scope the lookup when using creativeName directly. Ignored when utmContent is provided.
    */
   userId?: string;

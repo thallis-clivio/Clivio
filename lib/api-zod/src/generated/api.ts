@@ -8,6 +8,36 @@
 import * as zod from "zod";
 
 /**
+ * @summary Get user product settings (main product name for LTV classification)
+ */
+export const GetProductSettingsResponse = zod.object({
+  mainProductName: zod
+    .string()
+    .describe(
+      "Name of the main (front) product. Cross-sell products are tracked as LTV commission.",
+    ),
+});
+
+/**
+ * @summary Save user product settings
+ */
+export const UpdateProductSettingsBody = zod.object({
+  mainProductName: zod
+    .string()
+    .describe(
+      "Name of the main (front) product. Cross-sell products are tracked as LTV commission.",
+    ),
+});
+
+export const UpdateProductSettingsResponse = zod.object({
+  mainProductName: zod
+    .string()
+    .describe(
+      "Name of the main (front) product. Cross-sell products are tracked as LTV commission.",
+    ),
+});
+
+/**
  * @summary Get user commission rates
  */
 export const GetCommissionSettingsResponse = zod.object({
@@ -94,6 +124,11 @@ export const ListCreativesResponseItem = zod
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
+      ltvCommission: zod
+        .number()
+        .describe(
+          "Accumulated LTV\/cross-sell commission (not counted in ROAS)",
+        ),
     }),
   );
 export const ListCreativesResponse = zod.array(ListCreativesResponseItem);
@@ -147,6 +182,11 @@ export const GetCreativeResponse = zod
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
+      ltvCommission: zod
+        .number()
+        .describe(
+          "Accumulated LTV\/cross-sell commission (not counted in ROAS)",
+        ),
     }),
   );
 
@@ -196,6 +236,11 @@ export const UpdateCreativeResponse = zod
       decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
+      ltvCommission: zod
+        .number()
+        .describe(
+          "Accumulated LTV\/cross-sell commission (not counted in ROAS)",
+        ),
     }),
   );
 
@@ -294,6 +339,11 @@ export const GetDashboardSummaryResponse = zod.object({
         decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
         monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
         pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
+        ltvCommission: zod
+          .number()
+          .describe(
+            "Accumulated LTV\/cross-sell commission (not counted in ROAS)",
+          ),
       }),
     )
     .optional(),
@@ -412,6 +462,12 @@ export const SimulateSaleBody = zod.object({
     .describe("Creative name (used when utmContent is not provided)"),
   plan: zod.enum(["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]),
   cancelled: zod.boolean().optional(),
+  isLtv: zod
+    .boolean()
+    .optional()
+    .describe(
+      "If true, treats the sale as LTV\/cross-sell (adds to ltvCommission, skips lastSaleAt)",
+    ),
   userId: zod
     .string()
     .optional()

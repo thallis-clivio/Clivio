@@ -19,6 +19,36 @@ tags:
   - name: settings
     description: User settings and configuration
 paths:
+  /settings/products:
+    get:
+      operationId: getProductSettings
+      tags: [settings]
+      summary: Get user product settings (main product name for LTV classification)
+      responses:
+        "200":
+          description: Product settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSettings"
+    put:
+      operationId: updateProductSettings
+      tags: [settings]
+      summary: Save user product settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSettings"
+      responses:
+        "200":
+          description: Updated product settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSettings"
+
   /settings/commissions:
     get:
       operationId: getCommissionSettings
@@ -429,6 +459,15 @@ paths:
 
 components:
   schemas:
+    ProductSettings:
+      type: object
+      properties:
+        mainProductName:
+          type: string
+          description: Name of the main (front) product. Cross-sell products are tracked as LTV commission.
+      required:
+        - mainProductName
+
     CommissionSettings:
       type: object
       properties:
@@ -541,6 +580,9 @@ components:
               type: string
               nullable: true
               enum: [semVendas, prejuizo]
+            ltvCommission:
+              type: number
+              description: Accumulated LTV/cross-sell commission (not counted in ROAS)
           required:
             - id
             - daysWithoutSales
@@ -551,6 +593,7 @@ components:
             - predictabilityScore
             - predictabilityLabel
             - decision
+            - ltvCommission
 
     DashboardSummary:
       type: object
@@ -723,6 +766,9 @@ components:
           enum: ["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]
         cancelled:
           type: boolean
+        isLtv:
+          type: boolean
+          description: If true, treats the sale as LTV/cross-sell (adds to ltvCommission, skips lastSaleAt)
         userId:
           type: string
           description: >

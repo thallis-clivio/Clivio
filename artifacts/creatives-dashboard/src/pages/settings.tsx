@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight, DollarSign, Loader2, CheckCircle2, Sparkles } from "lucide-react";
+import { Copy, Check, Webhook, Link2, Info, AlertTriangle, ChevronRight, DollarSign, Loader2, CheckCircle2, Sparkles, Package } from "lucide-react";
 
 function CopyButton({ value, label }: { value: string; label?: string }) {
   const [copied, setCopied] = useState(false);
@@ -80,6 +80,48 @@ export default function Settings() {
 
   const [paytUrl, setPaytUrl] = useState(() => localStorage.getItem("clivio_payt_checkout_url") ?? "");
   const [urlSaved, setUrlSaved] = useState(false);
+
+  const [mainProductName, setMainProductName] = useState("");
+  const [productLoading, setProductLoading] = useState(true);
+  const [productSaving, setProductSaving] = useState(false);
+  const [productSaved, setProductSaved] = useState(false);
+
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const token = await getToken();
+        const res = await fetch(`${import.meta.env.BASE_URL}api/settings/products`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setMainProductName(data.mainProductName ?? "");
+        }
+      } catch { /* keep empty */ } finally {
+        setProductLoading(false);
+      }
+    })();
+  }, [user, getToken]);
+
+  const handleSaveProduct = async () => {
+    setProductSaving(true);
+    setProductSaved(false);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${import.meta.env.BASE_URL}api/settings/products`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ mainProductName }),
+      });
+      if (res.ok) {
+        setProductSaved(true);
+        setTimeout(() => setProductSaved(false), 3000);
+      }
+    } finally {
+      setProductSaving(false);
+    }
+  };
 
   function handleSaveUrl() {
     const trimmed = paytUrl.trim();
@@ -160,6 +202,57 @@ export default function Settings() {
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
           <p className="text-sm text-muted-foreground mt-1">Integração com Payt e configuração de postback</p>
         </div>
+
+        {/* Produto Principal */}
+        <Card className="border-border bg-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Produto Principal</CardTitle>
+            </div>
+            <CardDescription>
+              Informe o nome do seu produto principal (ex: Rosa Oriental). Vendas de outros produtos (cross-sells) serão contabilizadas como <strong>Comissão LTV</strong> — separadas do ROAS para não distorcer a análise do criativo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {productLoading ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Carregando...
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Nome do produto principal (deve constar no nome do produto na Payt)</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="ex: Rosa Oriental"
+                      value={mainProductName}
+                      onChange={e => { setMainProductName(e.target.value); setProductSaved(false); }}
+                      className="bg-muted/30 border-border focus:border-primary"
+                    />
+                    <Button onClick={handleSaveProduct} disabled={productSaving} size="sm" className="shrink-0 gap-1.5">
+                      {productSaving
+                        ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Salvando...</>
+                        : productSaved
+                          ? <><CheckCircle2 className="h-3.5 w-3.5 text-green-400" /> Salvo!</>
+                          : "Salvar"
+                      }
+                    </Button>
+                  </div>
+                </div>
+                {mainProductName.trim() ? (
+                  <p className="text-xs text-green-400 flex items-center gap-1">
+                    <CheckCircle2 className="h-3 w-3" />
+                    Vendas que não contenham "<strong>{mainProductName}</strong>" no nome do produto serão tratadas como LTV.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Sem produto principal configurado — todas as vendas são tratadas como front (ROAS).</p>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Commission Editor */}
         <Card className="border-border bg-card">

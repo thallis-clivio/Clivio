@@ -34,6 +34,7 @@ import type {
   ListCreativesParams,
   PaytWebhookPayload,
   PerformanceSummary,
+  ProductSettings,
   SimulateSaleBody,
   WebhookResponse,
 } from "./api.schemas";
@@ -46,6 +47,167 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary Get user product settings (main product name for LTV classification)
+ */
+export const getGetProductSettingsUrl = () => {
+  return `/api/settings/products`;
+};
+
+export const getProductSettings = async (
+  options?: RequestInit,
+): Promise<ProductSettings> => {
+  return customFetch<ProductSettings>(getGetProductSettingsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetProductSettingsQueryKey = () => {
+  return [`/api/settings/products`] as const;
+};
+
+export const getGetProductSettingsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getProductSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProductSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetProductSettingsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getProductSettings>>
+  > = ({ signal }) => getProductSettings({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getProductSettings>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetProductSettingsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getProductSettings>>
+>;
+export type GetProductSettingsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get user product settings (main product name for LTV classification)
+ */
+
+export function useGetProductSettings<
+  TData = Awaited<ReturnType<typeof getProductSettings>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getProductSettings>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetProductSettingsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save user product settings
+ */
+export const getUpdateProductSettingsUrl = () => {
+  return `/api/settings/products`;
+};
+
+export const updateProductSettings = async (
+  productSettings: ProductSettings,
+  options?: RequestInit,
+): Promise<ProductSettings> => {
+  return customFetch<ProductSettings>(getUpdateProductSettingsUrl(), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(productSettings),
+  });
+};
+
+export const getUpdateProductSettingsMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProductSettings>>,
+    TError,
+    { data: BodyType<ProductSettings> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateProductSettings>>,
+  TError,
+  { data: BodyType<ProductSettings> },
+  TContext
+> => {
+  const mutationKey = ["updateProductSettings"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateProductSettings>>,
+    { data: BodyType<ProductSettings> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return updateProductSettings(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateProductSettingsMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateProductSettings>>
+>;
+export type UpdateProductSettingsMutationBody = BodyType<ProductSettings>;
+export type UpdateProductSettingsMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save user product settings
+ */
+export const useUpdateProductSettings = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateProductSettings>>,
+    TError,
+    { data: BodyType<ProductSettings> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateProductSettings>>,
+  TError,
+  { data: BodyType<ProductSettings> },
+  TContext
+> => {
+  return useMutation(getUpdateProductSettingsMutationOptions(options));
+};
 
 /**
  * @summary Get user commission rates
