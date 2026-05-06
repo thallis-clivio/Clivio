@@ -62,7 +62,7 @@ router.get("/dashboard/performance-summary", async (req, res) => {
       bestRoas: null,
       worstCpa: null,
       mostSales: null,
-      decisions: { ESCALAR: 0, PAUSAR: 0 },
+      decisions: { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 },
       totalCreatives: 0,
     });
     return;

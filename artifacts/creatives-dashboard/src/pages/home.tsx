@@ -447,7 +447,11 @@ export default function Home() {
                             {creative.decision}
                           </Badge>
                           {creative.decision === "MONITORAR" && (
-                            <span className={`text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
+                            <span className={`flex items-center gap-0.5 text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
+                              {creative.monitorarReason === "decaindo"
+                                ? <TrendingDown className="w-2.5 h-2.5" />
+                                : <Activity className="w-2.5 h-2.5" />
+                              }
                               {getMonitorarLabel(creative.monitorarReason)}
                             </span>
                           )}

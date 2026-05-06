@@ -10,7 +10,7 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatRoas, formatDate } from "@/lib/format";
-import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge } from "lucide-react";
+import { ArrowLeft, Trash2, Edit, BrainCircuit, LineChart as LineIcon, AlertTriangle, Gauge, TrendingDown, Activity } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useQueryClient } from "@tanstack/react-query";
@@ -152,10 +152,15 @@ export default function CreativeDetail() {
               <h2 className="text-3xl font-bold tracking-tight font-mono" data-testid="text-creative-name">{creative.name}</h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
-                <Badge variant="outline" className={`font-mono border text-xs ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
+                <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
+                  {creative.decision === "MONITORAR" && (
+                    creative.monitorarReason === "decaindo"
+                      ? <TrendingDown className="w-3 h-3" />
+                      : <Activity className="w-3 h-3" />
+                  )}
                   {creative.decision}
                   {creative.decision === "MONITORAR" && creative.monitorarReason && (
-                    <span className="ml-1 opacity-70 font-normal">· {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}</span>
+                    <span className="opacity-70 font-normal">· {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}</span>
                   )}
                 </Badge>
                 <Badge variant="outline" className={`border text-xs ${getPredictabilityColor(creative.predictabilityLabel)}`} data-testid="badge-predictability">

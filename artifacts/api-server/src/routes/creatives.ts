@@ -299,7 +299,7 @@ router.post("/creatives/:id/analyze", async (req, res) => {
     ? `O CPA de R$${cpa.toFixed(0)} está dentro do aceitável, mas há espaço para otimizar.`
     : `O CPA de R$${cpa.toFixed(0)} está alto — o custo por venda está comprimindo a margem.`;
 
-  const { monitorarReason } = m as { monitorarReason: "lucrativo" | "decaindo" | null };
+  const { monitorarReason } = m;
 
   switch (decision) {
     case "ESCALAR":
