@@ -33,9 +33,13 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
   monthly: "Mês",
 };
 
-function getDecisionColor(decision: string) {
+function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 border-green-500/30";
+    case "MONITORAR":
+      return monitorarReason === "decaindo"
+        ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
+        : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 border-red-500/30";
     default: return "bg-gray-500/20 text-gray-500 border-gray-500/30";
   }
@@ -148,8 +152,11 @@ export default function CreativeDetail() {
               <h2 className="text-3xl font-bold tracking-tight font-mono" data-testid="text-creative-name">{creative.name}</h2>
               <div className="flex items-center gap-2 mt-1 flex-wrap">
                 <span className="text-muted-foreground text-sm">{formatDate(creative.date)}</span>
-                <Badge variant="outline" className={`font-mono border text-xs ${getDecisionColor(creative.decision)}`} data-testid="badge-decision">
+                <Badge variant="outline" className={`font-mono border text-xs ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
                   {creative.decision}
+                  {creative.decision === "MONITORAR" && creative.monitorarReason && (
+                    <span className="ml-1 opacity-70 font-normal">· {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}</span>
+                  )}
                 </Badge>
                 <Badge variant="outline" className={`border text-xs ${getPredictabilityColor(creative.predictabilityLabel)}`} data-testid="badge-predictability">
                   {creative.predictabilityLabel}

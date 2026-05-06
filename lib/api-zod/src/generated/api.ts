@@ -19,7 +19,7 @@ export const HealthCheckResponse = zod.object({
  * @summary List all creatives
  */
 export const ListCreativesQueryParams = zod.object({
-  decision: zod.enum(["ESCALAR", "PAUSAR"]).optional(),
+  decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]).optional(),
   sortBy: zod
     .enum(["roas", "spend", "commission", "name", "cpa", "totalSales"])
     .optional(),
@@ -54,7 +54,8 @@ export const ListCreativesResponseItem = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
     }),
   );
 export const ListCreativesResponse = zod.array(ListCreativesResponseItem);
@@ -110,7 +111,8 @@ export const GetCreativeResponse = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
     }),
   );
 
@@ -162,7 +164,8 @@ export const UpdateCreativeResponse = zod
         "MÉDIA PREVISIBILIDADE",
         "BAIXA PREVISIBILIDADE",
       ]),
-      decision: zod.enum(["ESCALAR", "PAUSAR"]),
+      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
     }),
   );
 
@@ -259,7 +262,8 @@ export const GetDashboardSummaryResponse = zod.object({
           "MÉDIA PREVISIBILIDADE",
           "BAIXA PREVISIBILIDADE",
         ]),
-        decision: zod.enum(["ESCALAR", "PAUSAR"]),
+        decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+        monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       }),
     )
     .optional(),
@@ -274,6 +278,7 @@ export const GetDecisionBreakdownQueryParams = zod.object({
 
 export const GetDecisionBreakdownResponse = zod.object({
   ESCALAR: zod.number(),
+  MONITORAR: zod.number(),
   PAUSAR: zod.number(),
 });
 
@@ -309,6 +314,7 @@ export const GetPerformanceSummaryResponse = zod.object({
     .nullish(),
   decisions: zod.object({
     ESCALAR: zod.number(),
+    MONITORAR: zod.number(),
     PAUSAR: zod.number(),
   }),
   totalCreatives: zod.number(),

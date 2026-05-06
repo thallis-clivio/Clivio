@@ -44,7 +44,7 @@ router.get("/dashboard/decision-breakdown", async (req, res) => {
   const filtered = rows.filter(r => filterByDateRange(r.date, dateFilter));
   const results = filtered.map(withMetrics);
 
-  const breakdown = { ESCALAR: 0, PAUSAR: 0 };
+  const breakdown = { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 };
   for (const c of results) breakdown[c.decision]++;
 
   res.json(breakdown);
@@ -77,7 +77,7 @@ router.get("/dashboard/performance-summary", async (req, res) => {
     : null;
   const mostSalesCreative = results.reduce((best, c) => c.totalSales > best.totalSales ? c : best);
 
-  const decisions = { ESCALAR: 0, PAUSAR: 0 };
+  const decisions = { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 };
   for (const c of results) decisions[c.decision]++;
 
   res.json({

@@ -41,7 +41,17 @@ export type CreativeWithMetricsDecision =
 
 export const CreativeWithMetricsDecision = {
   ESCALAR: "ESCALAR",
+  MONITORAR: "MONITORAR",
   PAUSAR: "PAUSAR",
+} as const;
+
+export type CreativeWithMetricsMonitorarReason =
+  | (typeof CreativeWithMetricsMonitorarReason)[keyof typeof CreativeWithMetricsMonitorarReason]
+  | null;
+
+export const CreativeWithMetricsMonitorarReason = {
+  lucrativo: "lucrativo",
+  decaindo: "decaindo",
 } as const;
 
 export type CreativeWithMetrics = CreateCreativeBody & {
@@ -53,6 +63,7 @@ export type CreativeWithMetrics = CreateCreativeBody & {
   predictabilityScore: number;
   predictabilityLabel: CreativeWithMetricsPredictabilityLabel;
   decision: CreativeWithMetricsDecision;
+  monitorarReason?: CreativeWithMetricsMonitorarReason;
 };
 
 export interface DashboardSummary {
@@ -67,6 +78,7 @@ export interface DashboardSummary {
 
 export interface DecisionBreakdown {
   ESCALAR: number;
+  MONITORAR: number;
   PAUSAR: number;
 }
 
@@ -91,6 +103,7 @@ export type PerformanceSummaryMostSales = {
 
 export type PerformanceSummaryDecisions = {
   ESCALAR: number;
+  MONITORAR: number;
   PAUSAR: number;
 };
 
@@ -159,6 +172,7 @@ export type ListCreativesDecision =
 
 export const ListCreativesDecision = {
   ESCALAR: "ESCALAR",
+  MONITORAR: "MONITORAR",
   PAUSAR: "PAUSAR",
 } as const;
 

@@ -39,10 +39,17 @@ function computeTotalSales(c: {
   return c.sales5m + c.sales7m + c.sales9m + c.sales12m + c.sales16m + c.sales20m;
 }
 
-function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): "ESCALAR" | "PAUSAR" {
-  if (daysWithoutSales >= 2) return "PAUSAR";
-  if (roas >= 2) return "ESCALAR";
-  return "PAUSAR";
+function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): {
+  decision: "ESCALAR" | "MONITORAR" | "PAUSAR";
+  monitorarReason: "lucrativo" | "decaindo" | null;
+} {
+  if (daysWithoutSales >= 2) return { decision: "PAUSAR", monitorarReason: null };
+  if (roas >= 2 && daysWithoutSales === 0) return { decision: "ESCALAR", monitorarReason: null };
+  if (roas >= 1 && (roas < 2 || daysWithoutSales === 1)) {
+    const reason = daysWithoutSales === 1 && roas >= 2 ? "decaindo" : "lucrativo";
+    return { decision: "MONITORAR", monitorarReason: reason };
+  }
+  return { decision: "PAUSAR", monitorarReason: null };
 }
 
 function computePredictability(
@@ -107,7 +114,7 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
   const totalSales = computeTotalSales(c);
   const roas = c.spend > 0 ? Math.round((commission / c.spend) * 100) / 100 : 0;
   const cpa = totalSales > 0 ? Math.round((c.spend / totalSales) * 100) / 100 : 0;
-  const decision = computeDecision(roas, cpa, c.daysWithoutSales);
+  const { decision, monitorarReason } = computeDecision(roas, cpa, c.daysWithoutSales);
   const { score: predictabilityScore, label: predictabilityLabel } = computePredictability(roas, cpa, c.daysWithoutSales, totalSales);
   return {
     id: c.id,
@@ -129,6 +136,7 @@ function withMetrics(c: typeof creativesTable.$inferSelect) {
     predictabilityScore,
     predictabilityLabel,
     decision,
+    monitorarReason,
   };
 }
 
@@ -291,10 +299,21 @@ router.post("/creatives/:id/analyze", async (req, res) => {
     ? `O CPA de R$${cpa.toFixed(0)} está dentro do aceitável, mas há espaço para otimizar.`
     : `O CPA de R$${cpa.toFixed(0)} está alto — o custo por venda está comprimindo a margem.`;
 
+  const { monitorarReason } = m as { monitorarReason: "lucrativo" | "decaindo" | null };
+
   switch (decision) {
     case "ESCALAR":
       explanation = `"${row.name}" está com desempenho excepcional — ROAS de ${roas.toFixed(2)}x com ${totalSales} venda(s) geradas. A comissão de R$${commission.toFixed(0)} sobre um gasto de R$${spend.toFixed(0)} demonstra alta lucratividade. ${cpaText} ${prevText}`;
       nextAction = `Aumente o orçamento em 20–30% e monitore as próximas 48 horas. Considere duplicar este criativo para novos públicos enquanto o original continua escalando.`;
+      break;
+    case "MONITORAR":
+      if (monitorarReason === "decaindo") {
+        explanation = `"${row.name}" era um criativo forte (ROAS de ${roas.toFixed(2)}x), mas entrou em alerta por ${daysWithoutSales} dia(s) sem conversões — sinal de queda de performance. ${cpaText} ${prevText}`;
+        nextAction = `Não aumente o orçamento agora. Monitore as próximas 24 horas. Se o próximo dia também não converter, execute a parada. Verifique segmentação, frequência e fatiga do criativo.`;
+      } else {
+        explanation = `"${row.name}" está operando no positivo — ROAS de ${roas.toFixed(2)}x — mas abaixo do limiar de escala de 2x. A comissão de R$${commission.toFixed(0)} cobre o gasto de R$${spend.toFixed(0)}, porém com margem estreita. ${cpaText} ${prevText}`;
+        nextAction = `Mantenha o orçamento atual e observe por mais 48h. Se o ROAS subir acima de 2x sem interrupção de conversões, escale. Teste variações de copy ou público para destravar o potencial.`;
+      }
       break;
     case "PAUSAR":
     default:

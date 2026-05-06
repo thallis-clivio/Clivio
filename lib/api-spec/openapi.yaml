@@ -42,7 +42,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ESCALAR, PAUSAR]
+            enum: [ESCALAR, MONITORAR, PAUSAR]
         - name: sortBy
           in: query
           required: false
@@ -404,7 +404,11 @@ components:
               enum: [ALTA PREVISIBILIDADE, MÉDIA PREVISIBILIDADE, BAIXA PREVISIBILIDADE]
             decision:
               type: string
-              enum: [ESCALAR, PAUSAR]
+              enum: [ESCALAR, MONITORAR, PAUSAR]
+            monitorarReason:
+              type: string
+              nullable: true
+              enum: [lucrativo, decaindo]
           required:
             - id
             - commission
@@ -445,10 +449,13 @@ components:
       properties:
         ESCALAR:
           type: integer
+        MONITORAR:
+          type: integer
         PAUSAR:
           type: integer
       required:
         - ESCALAR
+        - MONITORAR
         - PAUSAR
 
     PerformanceSummary:
@@ -494,9 +501,11 @@ components:
           properties:
             ESCALAR:
               type: integer
+            MONITORAR:
+              type: integer
             PAUSAR:
               type: integer
-          required: [ESCALAR, PAUSAR]
+          required: [ESCALAR, MONITORAR, PAUSAR]
         totalCreatives:
           type: integer
       required:

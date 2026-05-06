@@ -29,12 +29,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type DateFilter = "all" | "daily" | "weekly" | "monthly";
 
-function getDecisionColor(decision: string) {
+function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
+    case "MONITORAR":
+      return monitorarReason === "decaindo"
+        ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
+        : "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
     default: return "bg-gray-500/20 text-gray-500";
   }
+}
+
+function getMonitorarLabel(reason?: string | null) {
+  if (reason === "decaindo") return "Decaindo";
+  if (reason === "lucrativo") return "Lucrativo";
+  return null;
 }
 
 function getPredictabilityColor(label: string) {
@@ -149,10 +159,14 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 mt-2">
           Situação dos Criativos
         </div>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-3 gap-2">
           <div className="flex flex-col items-center p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
             <span className="text-2xl font-bold font-mono text-green-400">{data.decisions.ESCALAR}</span>
             <span className="text-[10px] text-green-600 font-semibold mt-0.5">ESCALAR</span>
+          </div>
+          <div className="flex flex-col items-center p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <span className="text-2xl font-bold font-mono text-yellow-400">{data.decisions.MONITORAR}</span>
+            <span className="text-[10px] text-yellow-600 font-semibold mt-0.5">MONITOR.</span>
           </div>
           <div className="flex flex-col items-center p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
             <span className="text-2xl font-bold font-mono text-red-400">{data.decisions.PAUSAR}</span>
@@ -363,6 +377,7 @@ export default function Home() {
                 <SelectContent>
                   <SelectItem value="ALL">Todas as Decisões</SelectItem>
                   <SelectItem value="ESCALAR">Escalar</SelectItem>
+                  <SelectItem value="MONITORAR">Monitorar</SelectItem>
                   <SelectItem value="PAUSAR">Pausar</SelectItem>
                 </SelectContent>
               </Select>
@@ -427,9 +442,16 @@ export default function Home() {
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">{creative.totalSales}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={`font-mono text-xs ${getDecisionColor(creative.decision)}`}>
-                          {creative.decision}
-                        </Badge>
+                        <div className="flex flex-col gap-0.5">
+                          <Badge variant="outline" className={`font-mono text-xs ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
+                            {creative.decision}
+                          </Badge>
+                          {creative.decision === "MONITORAR" && (
+                            <span className={`text-[10px] font-semibold ${creative.monitorarReason === "decaindo" ? "text-orange-400" : "text-yellow-400"}`}>
+                              {getMonitorarLabel(creative.monitorarReason)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`text-xs border ${getPredictabilityColor(creative.predictabilityLabel)}`}>
