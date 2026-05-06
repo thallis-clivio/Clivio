@@ -16,8 +16,8 @@ export function Layout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
       <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col hidden md:flex shrink-0">
-        <div className="px-6 py-5 border-b border-border flex items-center justify-center">
-          <BrandLogo size="md" className="max-w-[160px]" />
+        <div className="px-5 py-5 border-b border-border">
+          <BrandLogo variant="sidebar" />
         </div>
         <nav className="p-4 space-y-1 flex-1">
           <Link
@@ -63,7 +63,7 @@ export function Layout({ children }: { children: ReactNode }) {
       </aside>
 
       <header className="md:hidden border-b border-border bg-card p-4 flex items-center justify-between">
-        <BrandLogo size="sm" />
+        <BrandLogo variant="header" />
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="text-sm font-medium text-muted-foreground">Painel</Link>
           <Link href="/settings" className="text-sm font-medium text-muted-foreground">Config.</Link>

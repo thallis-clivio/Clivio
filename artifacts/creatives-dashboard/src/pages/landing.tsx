@@ -6,7 +6,7 @@ export default function Landing() {
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       <header className="border-b border-border px-6 py-4 flex items-center justify-between">
-        <BrandLogo size="sm" />
+        <BrandLogo variant="header" />
         <div className="flex items-center gap-3">
           <Link
             href="/sign-in"
