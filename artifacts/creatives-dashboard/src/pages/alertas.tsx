@@ -11,7 +11,8 @@ import {
   AlertTriangle, Rocket, Ban, TrendingDown, Activity,
   CheckCircle, ArrowRight, BellOff, Plus, Info,
 } from "lucide-react";
-import { DecisionTooltip, DECISION_TOOLTIPS } from "@/components/decision-badge";
+import { DecisionTooltip } from "@/components/decision-badge";
+import { DECISION_TOOLTIPS } from "@/components/decision-tooltips";
 
 interface Creative {
   id: number;
