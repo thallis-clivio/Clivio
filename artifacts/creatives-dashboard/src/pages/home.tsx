@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@clerk/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import { DecisionTooltip } from "@/components/decision-badge";
 
 type DateFilter = "weekly" | "daily" | "monthly" | "all" | "custom";
 
@@ -184,17 +185,17 @@ function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown
               const count = data?.[key as keyof DecisionBreakdown] ?? 0;
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
-                <button
-                  key={key}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBorder} hover:bg-muted/40 transition-colors cursor-pointer w-full`}
-                  data-testid={`decision-${key.toLowerCase()}`}
-                  onClick={() => navigate(`/criativos?decision=${key}`)}
-                  title={`Ver criativos: ${label}`}
-                >
-                  <span className={`text-3xl font-bold tabular-nums leading-none ${colorText}`}>{count}</span>
-                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${colorLabel}`}>{label}</span>
-                  <span className="text-[10px] text-muted-foreground">{pct}%</span>
-                </button>
+                <DecisionTooltip key={key} decision={key} className="flex w-full">
+                  <button
+                    className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBorder} hover:bg-muted/40 transition-colors cursor-pointer w-full`}
+                    data-testid={`decision-${key.toLowerCase()}`}
+                    onClick={() => navigate(`/criativos?decision=${key}`)}
+                  >
+                    <span className={`text-3xl font-bold tabular-nums leading-none ${colorText}`}>{count}</span>
+                    <span className={`text-[10px] font-semibold uppercase tracking-wide ${colorLabel}`}>{label}</span>
+                    <span className="text-[10px] text-muted-foreground">{pct}%</span>
+                  </button>
+                </DecisionTooltip>
               );
             })}
           </div>

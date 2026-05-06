@@ -16,15 +16,16 @@ export const DECISION_TOOLTIPS: Record<string, string> = {
 interface DecisionTooltipProps {
   decision: string;
   children: ReactNode;
+  className?: string;
 }
 
-export function DecisionTooltip({ decision, children }: DecisionTooltipProps) {
+export function DecisionTooltip({ decision, children, className = "inline-flex" }: DecisionTooltipProps) {
   const text = DECISION_TOOLTIPS[decision];
   if (!text) return <>{children}</>;
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="inline-flex">{children}</span>
+        <span className={className}>{children}</span>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-[220px] text-center leading-snug">
         {text}
