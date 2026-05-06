@@ -9,9 +9,9 @@ import { formatCurrency, formatRoas } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertTriangle, Rocket, Ban, TrendingDown, Activity,
-  CheckCircle, ArrowRight, BellOff, Plus,
+  CheckCircle, ArrowRight, BellOff, Plus, Info,
 } from "lucide-react";
-import { DecisionTooltip } from "@/components/decision-badge";
+import { DecisionTooltip, DECISION_TOOLTIPS } from "@/components/decision-badge";
 
 interface Creative {
   id: number;
@@ -118,6 +118,7 @@ function AlertSection({
   creatives,
   urgency,
   emptyText,
+  decision,
 }: {
   title: string;
   description: string;
@@ -125,6 +126,7 @@ function AlertSection({
   creatives: Creative[];
   urgency: AlertUrgency;
   emptyText: string;
+  decision?: string;
 }) {
   const headerColor =
     urgency === "critical" ? "text-red-400"    :
@@ -137,6 +139,8 @@ function AlertSection({
     urgency === "monitor"  ? "bg-yellow-500/20 text-yellow-400" :
     urgency === "info"     ? "bg-blue-500/20 text-blue-400"     : "bg-green-500/20 text-green-400";
 
+  const tooltipText = decision ? DECISION_TOOLTIPS[decision] : undefined;
+
   return (
     <Card className="border-border/50 bg-card/50">
       <CardHeader className="pb-3">
@@ -144,7 +148,14 @@ function AlertSection({
           <div className="flex items-center gap-2.5">
             <span className={headerColor}>{icon}</span>
             <div>
-              <CardTitle className="text-base">{title}</CardTitle>
+              <div className="flex items-center gap-1.5">
+                <CardTitle className="text-base">{title}</CardTitle>
+                {tooltipText && (
+                  <DecisionTooltip decision={decision!}>
+                    <Info className="w-3.5 h-3.5 text-muted-foreground/60 hover:text-muted-foreground cursor-help transition-colors" />
+                  </DecisionTooltip>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
             </div>
           </div>
@@ -296,6 +307,7 @@ export default function Alertas() {
               creatives={pausar}
               urgency="critical"
               emptyText="Nenhum criativo precisa ser pausado agora."
+              decision="PAUSAR"
             />
 
             <AlertSection
@@ -305,6 +317,7 @@ export default function Alertas() {
               creatives={monitorarDecaindo}
               urgency="monitor"
               emptyText="Nenhum criativo em decaimento detectado."
+              decision="MONITORAR"
             />
 
             {atencao.length > 0 && (
@@ -315,6 +328,7 @@ export default function Alertas() {
                 creatives={atencao}
                 urgency="warning"
                 emptyText=""
+                decision="ATENCAO"
               />
             )}
 
@@ -325,6 +339,7 @@ export default function Alertas() {
               creatives={escalar}
               urgency="success"
               emptyText="Nenhum criativo pronto para escala no momento."
+              decision="ESCALAR"
             />
 
             {lucrativo.length > 0 && (
@@ -335,6 +350,7 @@ export default function Alertas() {
                 creatives={lucrativo}
                 urgency="info"
                 emptyText=""
+                decision="LUCRATIVO"
               />
             )}
 
@@ -346,6 +362,7 @@ export default function Alertas() {
                 creatives={monitorarLucrativo}
                 urgency="monitor"
                 emptyText=""
+                decision="MONITORAR"
               />
             )}
           </>
