@@ -152,6 +152,8 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
   );
 }
 
+const BREAKDOWN_PARAMS = { dateFilter: "all" as const };
+
 const DECISION_CONFIG = [
   { key: "ESCALAR",   label: "Escalar",   colorBorder: "border-green-500/40",   colorText: "text-green-400",   colorLabel: "text-green-500"   },
   { key: "LUCRATIVO", label: "Lucrativo", colorBorder: "border-blue-500/40",    colorText: "text-blue-400",    colorLabel: "text-blue-500"    },
@@ -167,7 +169,7 @@ function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown
     <Card className="border-border/50 bg-card/50">
       <CardHeader className="pb-3">
         <CardTitle className="text-base">Distribuição por Decisão</CardTitle>
-        <p className="text-xs text-muted-foreground">Estado atual de todos os criativos ativos</p>
+        <p className="text-xs text-muted-foreground">Estado atual de todo o portfólio — independente do período selecionado</p>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -257,8 +259,8 @@ export default function Home() {
   const { data: chartData, isLoading: isChartLoading } = useGetDashboardCharts(dashParams, {
     query: { queryKey: getGetDashboardChartsQueryKey(dashParams) }
   });
-  const { data: decisionBreakdown, isLoading: isBreakdownLoading } = useGetDecisionBreakdown(dashParams, {
-    query: { queryKey: getGetDecisionBreakdownQueryKey(dashParams) }
+  const { data: decisionBreakdown, isLoading: isBreakdownLoading } = useGetDecisionBreakdown(BREAKDOWN_PARAMS, {
+    query: { queryKey: getGetDecisionBreakdownQueryKey(BREAKDOWN_PARAMS) }
   });
 
   const formattedChartData = useMemo(() => {
