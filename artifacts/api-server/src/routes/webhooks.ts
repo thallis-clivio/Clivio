@@ -116,33 +116,59 @@ router.post("/webhooks/payt", async (req, res) => {
 });
 
 // POST /webhooks/simulate — test endpoint, no auth required
-// userId param scopes the lookup to a specific user's creatives (prevents cross-tenant writes)
+// Accepts either:
+//   utmContent: "userId::creativeName"  (mirrors the real Payt webhook format — preferred)
+//   creativeName + optional userId       (legacy separate-field form — still supported)
 router.post("/webhooks/simulate", async (req, res) => {
-  const { creativeName, plan, cancelled, userId } = req.body as {
-    creativeName: string;
+  const { utmContent, creativeName, plan, cancelled, userId } = req.body as {
+    utmContent?: string;
+    creativeName?: string;
     plan: string;
     cancelled?: boolean;
     userId?: string;
   };
 
-  if (!creativeName || !plan) {
+  if (!plan) {
     res.status(200).json({ ok: false, reason: "missing_fields" });
     return;
   }
 
   let creative: typeof creativesTable.$inferSelect | undefined;
-  if (userId) {
-    const rows = await db.select().from(creativesTable).where(
-      and(eq(creativesTable.userId, userId), eq(creativesTable.name, creativeName))
-    );
-    creative = rows[0];
+
+  if (utmContent) {
+    // Parse the same userId::creativeName format as the real Payt webhook.
+    if (utmContent.includes("::")) {
+      const sepIdx = utmContent.indexOf("::");
+      const scopedUserId = utmContent.slice(0, sepIdx);
+      const scopedName = utmContent.slice(sepIdx + 2);
+      const rows = await db.select().from(creativesTable).where(
+        and(eq(creativesTable.userId, scopedUserId), eq(creativesTable.name, scopedName))
+      );
+      creative = rows[0];
+      req.log.info({ scopedUserId, scopedName }, "simulate: scoped utmContent lookup");
+    } else {
+      // Legacy plain-name utmContent — global search (same fallback as production webhook)
+      const rows = await db.select().from(creativesTable);
+      creative = rows.find(r => r.name.toLowerCase() === utmContent.toLowerCase());
+      req.log.info({ utmContent }, "simulate: global name lookup (set utmContent to userId::creativeName for scoped routing)");
+    }
+  } else if (creativeName) {
+    if (userId) {
+      const rows = await db.select().from(creativesTable).where(
+        and(eq(creativesTable.userId, userId), eq(creativesTable.name, creativeName))
+      );
+      creative = rows[0];
+    } else {
+      const rows = await db.select().from(creativesTable);
+      creative = rows.find(r => r.name.toLowerCase() === creativeName.toLowerCase());
+    }
   } else {
-    const rows = await db.select().from(creativesTable);
-    creative = rows.find(r => r.name.toLowerCase() === creativeName.toLowerCase());
+    res.status(200).json({ ok: false, reason: "missing_fields" });
+    return;
   }
 
   if (!creative) {
-    res.status(200).json({ ok: false, reason: "creative_not_found", utmContent: creativeName });
+    res.status(200).json({ ok: false, reason: "creative_not_found", utmContent: utmContent ?? creativeName });
     return;
   }
 

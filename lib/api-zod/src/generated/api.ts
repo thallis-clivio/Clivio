@@ -367,14 +367,23 @@ export const HandlePaytWebhookResponse = zod.object({
  * @summary Simulate a sale for testing purposes (no auth required)
  */
 export const SimulateSaleBody = zod.object({
-  creativeName: zod.string(),
+  utmContent: zod
+    .string()
+    .optional()
+    .describe(
+      "utm_content value in `userId::creativeName` format (mirrors the real Payt webhook). When provided, `creativeName` and `userId` are ignored.\n",
+    ),
+  creativeName: zod
+    .string()
+    .optional()
+    .describe("Creative name (used when utmContent is not provided)"),
   plan: zod.enum(["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]),
   cancelled: zod.boolean().optional(),
   userId: zod
     .string()
     .optional()
     .describe(
-      "Optional Clerk userId to scope the lookup to a specific user's creatives",
+      "Optional Clerk userId to scope the lookup when using creativeName directly. Ignored when utmContent is provided.\n",
     ),
 });
 

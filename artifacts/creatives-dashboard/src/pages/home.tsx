@@ -380,7 +380,7 @@ export default function Home() {
                       disabled={!simCreative || simulateMutation.isPending}
                       onClick={() => {
                         setSimResult(null);
-                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, userId: user?.id } });
+                        simulateMutation.mutate({ data: { utmContent: user?.id ? `${user.id}::${simCreative}` : simCreative, plan: simPlan } });
                       }}
                     >
                       {simulateMutation.isPending ? "Simulando..." : "Simular +1 Venda"}
@@ -391,7 +391,7 @@ export default function Home() {
                       disabled={!simCreative || simulateMutation.isPending}
                       onClick={() => {
                         setSimResult(null);
-                        simulateMutation.mutate({ data: { creativeName: simCreative, plan: simPlan, cancelled: true, userId: user?.id } });
+                        simulateMutation.mutate({ data: { utmContent: user?.id ? `${user.id}::${simCreative}` : simCreative, plan: simPlan, cancelled: true } });
                       }}
                     >
                       −1 (Cancelar)

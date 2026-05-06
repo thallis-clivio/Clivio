@@ -598,8 +598,14 @@ components:
     SimulateSaleBody:
       type: object
       properties:
+        utmContent:
+          type: string
+          description: >
+            utm_content value in `userId::creativeName` format (mirrors the real Payt webhook).
+            When provided, `creativeName` and `userId` are ignored.
         creativeName:
           type: string
+          description: Creative name (used when utmContent is not provided)
         plan:
           type: string
           enum: ["2m", "3m", "5m", "7m", "9m", "12m", "16m", "20m"]
@@ -607,9 +613,10 @@ components:
           type: boolean
         userId:
           type: string
-          description: Optional Clerk userId to scope the lookup to a specific user's creatives
+          description: >
+            Optional Clerk userId to scope the lookup when using creativeName directly.
+            Ignored when utmContent is provided.
       required:
-        - creativeName
         - plan
 
     PaytWebhookPayload:

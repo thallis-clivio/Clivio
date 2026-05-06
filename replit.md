@@ -55,7 +55,7 @@ A professional media buyer dashboard for managing and analyzing paid traffic cre
 - **Creative detail** (`/creatives/:id`): Full metrics breakdown, predictability bar, AI analysis
 - Sidebar logout button + user email display
 - "Simular Venda" button in dashboard header (no auth required on `/api/webhooks/simulate`)
-- Payt postback at `/api/webhooks/payt` (unprotected, validates PAYT_INTEGRATION_KEY)
+- Payt postback at `/api/webhooks/payt` (unprotected, validates PAYT_INTEGRATION_KEY); utm_content supports `userId::creativeName` for per-user routing, falls back to global name search for legacy values
 
 ## Gotchas
 

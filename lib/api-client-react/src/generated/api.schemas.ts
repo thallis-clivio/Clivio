@@ -168,10 +168,15 @@ export const SimulateSaleBodyPlan = {
 } as const;
 
 export interface SimulateSaleBody {
-  creativeName: string;
+  /** utm_content value in `userId::creativeName` format (mirrors the real Payt webhook). When provided, `creativeName` and `userId` are ignored.
+   */
+  utmContent?: string;
+  /** Creative name (used when utmContent is not provided) */
+  creativeName?: string;
   plan: SimulateSaleBodyPlan;
   cancelled?: boolean;
-  /** Optional Clerk userId to scope the lookup to a specific user's creatives */
+  /** Optional Clerk userId to scope the lookup when using creativeName directly. Ignored when utmContent is provided.
+   */
   userId?: string;
 }
 
