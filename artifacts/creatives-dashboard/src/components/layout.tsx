@@ -9,7 +9,7 @@ export function Layout({ children }: { children: ReactNode }) {
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col md:flex-row">
       <aside className="w-full md:w-64 border-r border-border bg-card flex flex-col hidden md:flex shrink-0">
         <div className="p-6 border-b border-border">
-          <h1 className="text-xl font-bold tracking-tight text-primary">CREATIVES.SYS</h1>
+          <h1 className="text-xl font-bold tracking-tight text-primary">Clivio</h1>
           <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">Status: Ativo</p>
         </div>
         <nav className="p-4 space-y-1 flex-1">
@@ -27,7 +27,7 @@ export function Layout({ children }: { children: ReactNode }) {
 
       {/* Mobile header */}
       <header className="md:hidden border-b border-border bg-card p-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold tracking-tight text-primary">CREATIVES.SYS</h1>
+        <h1 className="text-lg font-bold tracking-tight text-primary">Clivio</h1>
         <Link href="/" className="text-sm font-medium text-muted-foreground">Painel</Link>
       </header>
 
