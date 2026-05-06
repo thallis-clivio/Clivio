@@ -132,6 +132,11 @@ export default function CreativeDetail() {
     return chartData.map(d => ({ ...d, dateLabel: formatDate(d.date) }));
   }, [chartData]);
 
+  const hasSalesData = useMemo(() => {
+    if (!chartData) return false;
+    return chartData.some(d => d.totalSales > 0);
+  }, [chartData]);
+
   const deleteCreative = useDeleteCreative();
 
   function invalidateAll() {
@@ -440,9 +445,11 @@ export default function CreativeDetail() {
                 <div className="h-[200px] w-full">
                   {isChartLoading ? (
                     <Skeleton className="w-full h-full" />
-                  ) : formattedChartData.length === 0 ? (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
-                      Nenhum dado para o período selecionado.
+                  ) : !hasSalesData ? (
+                    <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground text-sm">
+                      <Activity className="w-8 h-8 opacity-20" />
+                      <p>Nenhuma venda registrada ainda.</p>
+                      <p className="text-xs opacity-60">O gráfico aparece quando há dados de vendas.</p>
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%">
