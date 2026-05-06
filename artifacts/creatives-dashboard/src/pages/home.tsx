@@ -408,7 +408,7 @@ export default function Home() {
                   Adicionar Criativo
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px] border-border">
+              <DialogContent className="sm:max-w-[440px] border-border">
                 <DialogHeader>
                   <DialogTitle>Novo Criativo</DialogTitle>
                 </DialogHeader>
