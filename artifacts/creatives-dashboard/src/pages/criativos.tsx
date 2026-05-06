@@ -26,12 +26,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 function getDecisionColor(decision: string, _monitorarReason?: string | null) {
   switch (decision) {
-    case "ESCALAR":   return "bg-green-500/20 text-green-400 hover:bg-green-500/30";
-    case "LUCRATIVO": return "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30";
-    case "MONITORAR": return "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
-    case "ATENCAO":   return "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30";
-    case "PAUSAR":    return "bg-red-500/20 text-red-400 hover:bg-red-500/30";
-    default: return "bg-gray-500/20 text-gray-500";
+    case "ESCALAR":   return "text-green-400 border-green-500/50";
+    case "LUCRATIVO": return "text-blue-400 border-blue-500/50";
+    case "MONITORAR": return "text-yellow-400 border-yellow-500/50";
+    case "ATENCAO":   return "text-orange-400 border-orange-500/50";
+    case "PAUSAR":    return "text-red-400 border-red-500/50";
+    default: return "text-gray-500 border-gray-500/50";
   }
 }
 

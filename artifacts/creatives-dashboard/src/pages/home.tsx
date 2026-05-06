@@ -126,25 +126,25 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
           Situação dos Criativos
         </div>
         <div className="grid grid-cols-5 gap-1.5">
-          <div className="flex flex-col items-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+          <div className="flex flex-col items-center p-2 rounded-lg border border-green-500/40">
             <span className="text-xl font-bold tabular-nums text-green-400">{data.decisions.ESCALAR}</span>
-            <span className="text-[9px] text-green-600 font-semibold mt-0.5 leading-tight text-center">ESCALAR</span>
+            <span className="text-[9px] text-green-500 font-semibold mt-0.5 leading-tight text-center">ESCALAR</span>
           </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-blue-500/10 border border-blue-500/20">
+          <div className="flex flex-col items-center p-2 rounded-lg border border-blue-500/40">
             <span className="text-xl font-bold tabular-nums text-blue-400">{data.decisions.LUCRATIVO}</span>
-            <span className="text-[9px] text-blue-600 font-semibold mt-0.5 leading-tight text-center">LUCRAT.</span>
+            <span className="text-[9px] text-blue-500 font-semibold mt-0.5 leading-tight text-center">LUCRAT.</span>
           </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+          <div className="flex flex-col items-center p-2 rounded-lg border border-yellow-500/40">
             <span className="text-xl font-bold tabular-nums text-yellow-400">{data.decisions.MONITORAR}</span>
-            <span className="text-[9px] text-yellow-600 font-semibold mt-0.5 leading-tight text-center">MONIT.</span>
+            <span className="text-[9px] text-yellow-500 font-semibold mt-0.5 leading-tight text-center">MONIT.</span>
           </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+          <div className="flex flex-col items-center p-2 rounded-lg border border-orange-500/40">
             <span className="text-xl font-bold tabular-nums text-orange-400">{data.decisions.ATENCAO}</span>
-            <span className="text-[9px] text-orange-600 font-semibold mt-0.5 leading-tight text-center">ATENÇÃO</span>
+            <span className="text-[9px] text-orange-500 font-semibold mt-0.5 leading-tight text-center">ATENÇÃO</span>
           </div>
-          <div className="flex flex-col items-center p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+          <div className="flex flex-col items-center p-2 rounded-lg border border-red-500/40">
             <span className="text-xl font-bold tabular-nums text-red-400">{data.decisions.PAUSAR}</span>
-            <span className="text-[9px] text-red-600 font-semibold mt-0.5 leading-tight text-center">PAUSAR</span>
+            <span className="text-[9px] text-red-500 font-semibold mt-0.5 leading-tight text-center">PAUSAR</span>
           </div>
         </div>
       </div>
@@ -153,11 +153,11 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
 }
 
 const DECISION_CONFIG = [
-  { key: "ESCALAR",   label: "Escalar",   colorBg: "bg-green-500/10",   colorBorder: "border-green-500/20",   colorText: "text-green-400",   colorLabel: "text-green-600"   },
-  { key: "LUCRATIVO", label: "Lucrativo", colorBg: "bg-blue-500/10",    colorBorder: "border-blue-500/20",    colorText: "text-blue-400",    colorLabel: "text-blue-600"    },
-  { key: "MONITORAR", label: "Monitorar", colorBg: "bg-yellow-500/10",  colorBorder: "border-yellow-500/20",  colorText: "text-yellow-400",  colorLabel: "text-yellow-600"  },
-  { key: "ATENCAO",   label: "Atenção",   colorBg: "bg-orange-500/10",  colorBorder: "border-orange-500/20",  colorText: "text-orange-400",  colorLabel: "text-orange-600"  },
-  { key: "PAUSAR",    label: "Pausar",    colorBg: "bg-red-500/10",     colorBorder: "border-red-500/20",     colorText: "text-red-400",     colorLabel: "text-red-600"     },
+  { key: "ESCALAR",   label: "Escalar",   colorBorder: "border-green-500/40",   colorText: "text-green-400",   colorLabel: "text-green-500"   },
+  { key: "LUCRATIVO", label: "Lucrativo", colorBorder: "border-blue-500/40",    colorText: "text-blue-400",    colorLabel: "text-blue-500"    },
+  { key: "MONITORAR", label: "Monitorar", colorBorder: "border-yellow-500/40",  colorText: "text-yellow-400",  colorLabel: "text-yellow-500"  },
+  { key: "ATENCAO",   label: "Atenção",   colorBorder: "border-orange-500/40",  colorText: "text-orange-400",  colorLabel: "text-orange-500"  },
+  { key: "PAUSAR",    label: "Pausar",    colorBorder: "border-red-500/40",     colorText: "text-red-400",     colorLabel: "text-red-500"     },
 ] as const;
 
 function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown; isLoading: boolean }) {
@@ -176,13 +176,13 @@ function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown
           </div>
         ) : (
           <div className="grid grid-cols-5 gap-3">
-            {DECISION_CONFIG.map(({ key, label, colorBg, colorBorder, colorText, colorLabel }) => {
+            {DECISION_CONFIG.map(({ key, label, colorBorder, colorText, colorLabel }) => {
               const count = data?.[key as keyof DecisionBreakdown] ?? 0;
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div
                   key={key}
-                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBg} ${colorBorder}`}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBorder}`}
                   data-testid={`decision-${key.toLowerCase()}`}
                 >
                   <span className={`text-3xl font-bold tabular-nums leading-none ${colorText}`}>{count}</span>

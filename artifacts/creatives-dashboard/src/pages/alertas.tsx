@@ -32,11 +32,11 @@ type AlertUrgency = "critical" | "warning" | "monitor" | "info" | "success";
 
 function AlertCard({ creative, urgency }: { creative: Creative; urgency: AlertUrgency }) {
   const colorMap = {
-    critical: { border: "border-red-500/30",    bg: "bg-red-500/5",    icon: "text-red-400",    iconBg: "bg-red-500/15"    },
-    warning:  { border: "border-orange-500/30", bg: "bg-orange-500/5", icon: "text-orange-400", iconBg: "bg-orange-500/15" },
-    monitor:  { border: "border-yellow-500/30", bg: "bg-yellow-500/5", icon: "text-yellow-400", iconBg: "bg-yellow-500/15" },
-    info:     { border: "border-blue-500/30",   bg: "bg-blue-500/5",   icon: "text-blue-400",   iconBg: "bg-blue-500/15"   },
-    success:  { border: "border-green-500/30",  bg: "bg-green-500/5",  icon: "text-green-400",  iconBg: "bg-green-500/15"  },
+    critical: { border: "border-red-500/30",    bg: "",  icon: "text-red-400",    iconBg: "bg-red-500/10"    },
+    warning:  { border: "border-orange-500/30", bg: "",  icon: "text-orange-400", iconBg: "bg-orange-500/10" },
+    monitor:  { border: "border-yellow-500/30", bg: "",  icon: "text-yellow-400", iconBg: "bg-yellow-500/10" },
+    info:     { border: "border-blue-500/30",   bg: "",  icon: "text-blue-400",   iconBg: "bg-blue-500/10"   },
+    success:  { border: "border-green-500/30",  bg: "",  icon: "text-green-400",  iconBg: "bg-green-500/10"  },
   }[urgency];
 
   function getAlertIcon() {
@@ -73,11 +73,11 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: AlertUr
           <Badge
             variant="outline"
             className={`text-xs shrink-0 ${
-              urgency === "critical" ? "bg-red-500/20 text-red-400 border-red-500/30" :
-              urgency === "warning"  ? "bg-orange-500/20 text-orange-400 border-orange-500/30" :
-              urgency === "monitor"  ? "bg-yellow-500/20 text-yellow-400 border-yellow-500/30" :
-              urgency === "info"     ? "bg-blue-500/20 text-blue-400 border-blue-500/30" :
-              "bg-green-500/20 text-green-400 border-green-500/30"
+              urgency === "critical" ? "text-red-400 border-red-500/50" :
+              urgency === "warning"  ? "text-orange-400 border-orange-500/50" :
+              urgency === "monitor"  ? "text-yellow-400 border-yellow-500/50" :
+              urgency === "info"     ? "text-blue-400 border-blue-500/50" :
+              "text-green-400 border-green-500/50"
             }`}
           >
             {creative.decision === "ATENCAO" ? "ATENÇÃO" : creative.decision}

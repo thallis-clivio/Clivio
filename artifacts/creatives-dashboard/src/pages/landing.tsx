@@ -84,11 +84,11 @@ export default function Landing() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-              <DecisionBadge label="ESCALAR" colorClasses="bg-green-500/20 text-green-500 border border-green-500/30" />
-              <DecisionBadge label="LUCRATIVO" colorClasses="bg-blue-500/20 text-blue-400 border border-blue-500/30" />
-              <DecisionBadge label="ATENÇÃO" colorClasses="bg-orange-500/20 text-orange-400 border border-orange-500/30" />
-              <DecisionBadge label="MONITORAR" colorClasses="bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" />
-              <DecisionBadge label="PAUSAR" colorClasses="bg-red-500/20 text-red-500 border border-red-500/30" />
+              <DecisionBadge label="ESCALAR" colorClasses="text-green-400 border border-green-500/50" />
+              <DecisionBadge label="LUCRATIVO" colorClasses="text-blue-400 border border-blue-500/50" />
+              <DecisionBadge label="ATENÇÃO" colorClasses="text-orange-400 border border-orange-500/50" />
+              <DecisionBadge label="MONITORAR" colorClasses="text-yellow-400 border border-yellow-500/50" />
+              <DecisionBadge label="PAUSAR" colorClasses="text-red-400 border border-red-500/50" />
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
@@ -117,11 +117,11 @@ export default function Landing() {
                 Decisão automática baseada em ROAS e dias sem vendas — cada criativo recebe um estado em tempo real.
               </p>
               <div className="flex flex-wrap gap-1.5 pt-1">
-                <DecisionBadge label="ESCALAR" colorClasses="bg-green-500/20 text-green-500" size="sm" />
-                <DecisionBadge label="LUCRATIVO" colorClasses="bg-blue-500/20 text-blue-400" size="sm" />
-                <DecisionBadge label="ATENÇÃO" colorClasses="bg-orange-500/20 text-orange-400" size="sm" />
-                <DecisionBadge label="MONITORAR" colorClasses="bg-yellow-500/20 text-yellow-400" size="sm" />
-                <DecisionBadge label="PAUSAR" colorClasses="bg-red-500/20 text-red-500" size="sm" />
+                <DecisionBadge label="ESCALAR" colorClasses="text-green-400 border border-green-500/50" size="sm" />
+                <DecisionBadge label="LUCRATIVO" colorClasses="text-blue-400 border border-blue-500/50" size="sm" />
+                <DecisionBadge label="ATENÇÃO" colorClasses="text-orange-400 border border-orange-500/50" size="sm" />
+                <DecisionBadge label="MONITORAR" colorClasses="text-yellow-400 border border-yellow-500/50" size="sm" />
+                <DecisionBadge label="PAUSAR" colorClasses="text-red-400 border border-red-500/50" size="sm" />
               </div>
             </div>
 
