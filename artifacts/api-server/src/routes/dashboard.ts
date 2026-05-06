@@ -87,7 +87,7 @@ router.get("/dashboard/decision-breakdown", requireAuth, async (req, res) => {
   const rates = await getCommissionRates(userId);
   const results = filtered.map(r => withMetrics(r, rates));
 
-  const breakdown = { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 };
+  const breakdown: Record<string, number> = { ESCALAR: 0, LUCRATIVO: 0, MONITORAR: 0, ATENCAO: 0, PAUSAR: 0 };
   for (const c of results) breakdown[c.decision]++;
 
   res.json(breakdown);
@@ -124,7 +124,7 @@ router.get("/dashboard/performance-summary", requireAuth, async (req, res) => {
     : null;
   const mostSalesCreative = results.reduce((best, c) => c.totalSales > best.totalSales ? c : best);
 
-  const decisions = { ESCALAR: 0, MONITORAR: 0, PAUSAR: 0 };
+  const decisions: Record<string, number> = { ESCALAR: 0, LUCRATIVO: 0, MONITORAR: 0, ATENCAO: 0, PAUSAR: 0 };
   for (const c of results) decisions[c.decision]++;
 
   res.json({

@@ -27,13 +27,21 @@ import { Skeleton } from "@/components/ui/skeleton";
 function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 hover:bg-green-500/30";
+    case "LUCRATIVO": return "bg-blue-500/20 text-blue-400 hover:bg-blue-500/30";
     case "MONITORAR":
       return monitorarReason === "decaindo"
         ? "bg-orange-500/20 text-orange-400 hover:bg-orange-500/30"
         : "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30";
+    case "ATENCAO": return "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 hover:bg-red-500/30";
     default: return "bg-gray-500/20 text-gray-500";
   }
+}
+
+function getDecisionLabel(decision: string) {
+  if (decision === "ATENCAO") return "ATENÇÃO";
+  if (decision === "LUCRATIVO") return "LUCRATIVO";
+  return decision;
 }
 
 function getMonitorarLabel(reason?: string | null) {
@@ -46,6 +54,13 @@ function getPausarLabel(reason?: string | null) {
   if (reason === "semVendas") return "Sem Vendas";
   if (reason === "prejuizo") return "Prejuízo";
   return null;
+}
+
+function getDaysLabel(days: number) {
+  if (days === 0) return { text: "Hoje", color: "text-green-400" };
+  if (days === 1) return { text: "1 dia", color: "text-yellow-400" };
+  if (days === 2) return { text: "2 dias", color: "text-orange-400" };
+  return { text: `${days} dias`, color: "text-red-400" };
 }
 
 function getPredictabilityColor(label: string) {
@@ -73,6 +88,7 @@ const SORTABLE_COLS: { key: ListCreativesSortBy; label: string }[] = [
   { key: "roas", label: "ROAS" },
   { key: "cpa", label: "CPA" },
   { key: "totalSales", label: "Vendas" },
+  { key: "daysWithoutSales", label: "Ult. Venda" },
 ];
 
 function SortableHead({
@@ -214,13 +230,15 @@ export default function Criativos() {
             </CardTitle>
             <div className="flex items-center gap-2">
               <Select value={decisionFilter} onValueChange={v => setDecisionFilter(v as CreativeWithMetricsDecision | "ALL")}>
-                <SelectTrigger className="w-[155px]">
+                <SelectTrigger className="w-[160px]">
                   <SelectValue placeholder="Decisão" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">Todas as Decisões</SelectItem>
                   <SelectItem value="ESCALAR">Escalar</SelectItem>
+                  <SelectItem value="LUCRATIVO">Lucrativo</SelectItem>
                   <SelectItem value="MONITORAR">Monitorar</SelectItem>
+                  <SelectItem value="ATENCAO">Atenção</SelectItem>
                   <SelectItem value="PAUSAR">Pausar</SelectItem>
                 </SelectContent>
               </Select>
@@ -249,6 +267,7 @@ export default function Criativos() {
                   <SortableHead col="roas" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHead col="cpa" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <SortableHead col="totalSales" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
+                  <SortableHead col="daysWithoutSales" sortBy={sortBy} sortOrder={sortOrder} onSort={handleSort} className="text-right" />
                   <TableHead>Decisão</TableHead>
                   <TableHead>Previsibilidade</TableHead>
                   <TableHead></TableHead>
@@ -258,12 +277,12 @@ export default function Criativos() {
                 {isLoading ? (
                   [1, 2, 3].map(i => (
                     <TableRow key={i} className="border-border">
-                      {[...Array(9)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
+                      {[...Array(10)].map((_, j) => <TableCell key={j}><Skeleton className="h-5 w-full" /></TableCell>)}
                     </TableRow>
                   ))
                 ) : creatives?.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="py-16">
+                    <TableCell colSpan={10} className="py-16">
                       <div className="flex flex-col items-center gap-4 text-center">
                         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                           <Activity className="w-6 h-6 text-muted-foreground" />
@@ -300,26 +319,40 @@ export default function Criativos() {
                         {creative.totalSales === 0 ? <span className="text-muted-foreground">—</span> : formatCurrency(creative.cpa)}
                       </TableCell>
                       <TableCell className="text-right text-sm tabular-nums">{creative.totalSales}</TableCell>
+                      <TableCell className="text-right">
+                        {(() => {
+                          const { text, color } = getDaysLabel(creative.daysWithoutSales);
+                          return <span className={`text-sm font-semibold tabular-nums ${color}`}>{text}</span>;
+                        })()}
+                      </TableCell>
                       <TableCell>
                         <div className="flex flex-col gap-0.5">
                           <Badge variant="outline" className={`text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`}>
                             {creative.decision === "ESCALAR" && <Rocket className="w-2.5 h-2.5" />}
+                            {creative.decision === "LUCRATIVO" && <Rocket className="w-2.5 h-2.5" />}
                             {creative.decision === "MONITORAR" && (
                               creative.monitorarReason === "decaindo"
                                 ? <TrendingDown className="w-2.5 h-2.5" />
                                 : <Activity className="w-2.5 h-2.5" />
                             )}
+                            {creative.decision === "ATENCAO" && <Activity className="w-2.5 h-2.5" />}
                             {creative.decision === "PAUSAR" && (
                               creative.pausarReason === "semVendas"
                                 ? <Ban className="w-2.5 h-2.5" />
                                 : <TrendingDown className="w-2.5 h-2.5" />
                             )}
-                            {creative.decision}
+                            {getDecisionLabel(creative.decision)}
                           </Badge>
                           {creative.decision === "ESCALAR" && (
                             <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
                               <Rocket className="w-2.5 h-2.5" />
                               Acelerando
+                            </span>
+                          )}
+                          {creative.decision === "LUCRATIVO" && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-blue-400">
+                              <Rocket className="w-2.5 h-2.5" />
+                              Rentável
                             </span>
                           )}
                           {creative.decision === "MONITORAR" && (
@@ -329,6 +362,12 @@ export default function Criativos() {
                                 : <Activity className="w-2.5 h-2.5" />
                               }
                               {getMonitorarLabel(creative.monitorarReason)}
+                            </span>
+                          )}
+                          {creative.decision === "ATENCAO" && (
+                            <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-400">
+                              <Activity className="w-2.5 h-2.5" />
+                              Margem baixa
                             </span>
                           )}
                           {creative.decision === "PAUSAR" && (

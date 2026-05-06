@@ -59,11 +59,13 @@ function AlertCard({ creative, urgency }: { creative: Creative; urgency: "critic
   }
 
   function getAlertMessage() {
-    if (creative.decision === "ESCALAR") return "ROAS acima do threshold — pronto para escalar budget";
-    if (creative.pausarReason === "semVendas") return `${creative.daysWithoutSales}+ dias sem conversão — pausar imediatamente`;
-    if (creative.pausarReason === "prejuizo") return "ROAS abaixo de 1.0 — operando em prejuízo";
-    if (creative.monitorarReason === "decaindo") return "ROAS entre 1.0–3.5 e com dias sem venda — decaindo";
-    if (creative.monitorarReason === "lucrativo") return "ROAS saudável — monitorar para possível escala";
+    if (creative.decision === "ESCALAR") return "ROAS ≥ 3.5 com vendas hoje — aumentar budget agora";
+    if (creative.decision === "LUCRATIVO") return "ROAS ≥ 2.0 com vendas hoje — manter investimento";
+    if (creative.decision === "ATENCAO") return "ROAS entre 1–2 — margem baixa, acompanhar de perto";
+    if (creative.pausarReason === "semVendas") return `${creative.daysWithoutSales} dia(s) sem conversão — pausar imediatamente`;
+    if (creative.pausarReason === "prejuizo") return "ROAS abaixo de 1.0 — operando em prejuízo, pausar";
+    if (creative.monitorarReason === "decaindo") return `${creative.daysWithoutSales} dia(s) sem venda — próximos dias determinam o corte`;
+    if (creative.monitorarReason === "lucrativo") return "ROAS alto com 1 dia sem venda — monitorar antes de decidir";
     return "Aguardando dados suficientes para decisão";
   }
 
@@ -165,19 +167,21 @@ export default function Alertas() {
     { query: { queryKey: getListCreativesQueryKey({ dateFilter: "all", sortBy: "roas", sortOrder: "asc" }) } }
   );
 
-  const { pausar, monitorarDecaindo, monitorarLucrativo, escalar } = useMemo(() => {
+  const { pausar, monitorarDecaindo, atencao, monitorarLucrativo, lucrativo, escalar } = useMemo(() => {
     const creatives = (allCreatives ?? []) as Creative[];
     return {
       pausar: creatives.filter(c => c.decision === "PAUSAR"),
       monitorarDecaindo: creatives.filter(c => c.decision === "MONITORAR" && c.monitorarReason === "decaindo"),
-      monitorarLucrativo: creatives.filter(c => c.decision === "MONITORAR" && c.monitorarReason !== "decaindo"),
+      atencao: creatives.filter(c => c.decision === "ATENCAO"),
+      monitorarLucrativo: creatives.filter(c => c.decision === "MONITORAR" && c.monitorarReason === "lucrativo"),
+      lucrativo: creatives.filter(c => c.decision === "LUCRATIVO"),
       escalar: creatives.filter(c => c.decision === "ESCALAR"),
     };
   }, [allCreatives]);
 
-  const totalActionNeeded = pausar.length + monitorarDecaindo.length;
+  const totalActionNeeded = pausar.length + monitorarDecaindo.length + atencao.length;
   const investimentoEmRisco = pausar.reduce((s, c) => s + c.spend, 0);
-  const comissaoPotencial = escalar.reduce((s, c) => s + c.commission, 0);
+  const comissaoPotencial = [...escalar, ...lucrativo].reduce((s, c) => s + c.commission, 0);
 
   if (isLoading) {
     return (
@@ -292,27 +296,49 @@ export default function Alertas() {
             />
 
             <AlertSection
-              title="Em Observação — Decaindo"
-              description="ROAS entre 1.0–3.5 com dias sem conversão. Atenção antes de investir mais."
+              title="Monitorar — Decaindo"
+              description="Com dias sem venda. Próximos 1–2 dias determinam se serão cortados."
               icon={<TrendingDown className="w-5 h-5" />}
               creatives={monitorarDecaindo}
               urgency="warning"
               emptyText="Nenhum criativo em decaimento detectado."
             />
 
+            {atencao.length > 0 && (
+              <AlertSection
+                title="Atenção — Margem Baixa"
+                description="ROAS entre 1–2: vendendo mas com lucro marginal. Avaliar otimizações."
+                icon={<Activity className="w-5 h-5" />}
+                creatives={atencao}
+                urgency="warning"
+                emptyText=""
+              />
+            )}
+
             <AlertSection
               title="Oportunidade — Escalar"
-              description="ROAS acima de 3.5 e performance consistente. Aumente o orçamento."
+              description="ROAS ≥ 3.5 com vendas hoje. Aumentar orçamento agora."
               icon={<Rocket className="w-5 h-5" />}
               creatives={escalar}
               urgency="success"
               emptyText="Nenhum criativo pronto para escala no momento."
             />
 
+            {lucrativo.length > 0 && (
+              <AlertSection
+                title="Lucrativos — Manter"
+                description="ROAS ≥ 2.0 com vendas hoje. Manter investimento e acompanhar."
+                icon={<CheckCircle className="w-5 h-5" />}
+                creatives={lucrativo}
+                urgency="success"
+                emptyText=""
+              />
+            )}
+
             {monitorarLucrativo.length > 0 && (
               <AlertSection
-                title="Monitorando — Lucrativos"
-                description="ROAS saudável mas abaixo do threshold de escala. Continue acompanhando."
+                title="Monitorar — Alto ROAS"
+                description="ROAS ≥ 3 com 1 dia sem venda. Provavelmente vai se recuperar — acompanhe."
                 icon={<Activity className="w-5 h-5" />}
                 creatives={monitorarLucrativo}
                 urgency="warning"

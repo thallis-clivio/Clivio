@@ -78,13 +78,20 @@ const DATE_FILTER_LABELS: Record<DateFilter, string> = {
 function getDecisionColor(decision: string, monitorarReason?: string | null) {
   switch (decision) {
     case "ESCALAR": return "bg-green-500/20 text-green-500 border-green-500/30";
+    case "LUCRATIVO": return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     case "MONITORAR":
       return monitorarReason === "decaindo"
         ? "bg-orange-500/20 text-orange-400 border-orange-500/30"
         : "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+    case "ATENCAO": return "bg-amber-500/20 text-amber-400 border-amber-500/30";
     case "PAUSAR": return "bg-red-500/20 text-red-500 border-red-500/30";
     default: return "bg-gray-500/20 text-gray-500 border-gray-500/30";
   }
+}
+
+function getDecisionLabel(decision: string) {
+  if (decision === "ATENCAO") return "ATENÇÃO";
+  return decision;
 }
 
 function getPausarLabel(reason?: string | null) {
@@ -274,22 +281,30 @@ export default function CreativeDetail() {
                 <div className="flex flex-col gap-0.5">
                   <Badge variant="outline" className={`font-mono border text-xs inline-flex items-center gap-1 ${getDecisionColor(creative.decision, creative.monitorarReason)}`} data-testid="badge-decision">
                     {creative.decision === "ESCALAR" && <Rocket className="w-3 h-3" />}
+                    {creative.decision === "LUCRATIVO" && <Rocket className="w-3 h-3" />}
                     {creative.decision === "MONITORAR" && (
                       creative.monitorarReason === "decaindo"
                         ? <TrendingDown className="w-3 h-3" />
                         : <Activity className="w-3 h-3" />
                     )}
+                    {creative.decision === "ATENCAO" && <Activity className="w-3 h-3" />}
                     {creative.decision === "PAUSAR" && (
                       creative.pausarReason === "semVendas"
                         ? <Ban className="w-3 h-3" />
                         : <TrendingDown className="w-3 h-3" />
                     )}
-                    {creative.decision}
+                    {getDecisionLabel(creative.decision)}
                   </Badge>
                   {creative.decision === "ESCALAR" && (
                     <span className="flex items-center gap-0.5 text-[10px] font-semibold text-green-400">
                       <Rocket className="w-2.5 h-2.5" />
                       Acelerando
+                    </span>
+                  )}
+                  {creative.decision === "LUCRATIVO" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-semibold text-blue-400">
+                      <Rocket className="w-2.5 h-2.5" />
+                      Rentável
                     </span>
                   )}
                   {creative.decision === "MONITORAR" && creative.monitorarReason && (
@@ -299,6 +314,12 @@ export default function CreativeDetail() {
                         : <Activity className="w-2.5 h-2.5" />
                       }
                       {creative.monitorarReason === "decaindo" ? "Decaindo" : "Lucrativo"}
+                    </span>
+                  )}
+                  {creative.decision === "ATENCAO" && (
+                    <span className="flex items-center gap-0.5 text-[10px] font-semibold text-amber-400">
+                      <Activity className="w-2.5 h-2.5" />
+                      Margem baixa
                     </span>
                   )}
                   {creative.decision === "PAUSAR" && (

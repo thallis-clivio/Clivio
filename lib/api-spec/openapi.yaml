@@ -104,13 +104,13 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ESCALAR, MONITORAR, PAUSAR]
+            enum: [ESCALAR, LUCRATIVO, MONITORAR, ATENCAO, PAUSAR]
         - name: sortBy
           in: query
           required: false
           schema:
             type: string
-            enum: [roas, spend, commission, name, cpa, totalSales]
+            enum: [roas, spend, commission, name, cpa, totalSales, daysWithoutSales]
         - name: sortOrder
           in: query
           required: false
@@ -571,7 +571,7 @@ components:
               enum: [EXCELENTE, BOM, RUIM]
             decision:
               type: string
-              enum: [ESCALAR, MONITORAR, PAUSAR]
+              enum: [ESCALAR, LUCRATIVO, MONITORAR, ATENCAO, PAUSAR]
             monitorarReason:
               type: string
               nullable: true

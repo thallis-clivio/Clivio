@@ -76,21 +76,28 @@ function computeTotalSales(c: {
 }
 
 function computeDecision(roas: number, _cpa: number, daysWithoutSales: number): {
-  decision: "ESCALAR" | "MONITORAR" | "PAUSAR";
+  decision: "ESCALAR" | "LUCRATIVO" | "MONITORAR" | "ATENCAO" | "PAUSAR";
   monitorarReason: "lucrativo" | "decaindo" | null;
   pausarReason: "semVendas" | "prejuizo" | null;
 } {
-  // Corte por dias sem venda — independente do ROAS:
-  // 3+ dias = corte sempre; 2 dias = corte exceto ROAS >= 3.5 (ganha 1 dia extra)
+  // Corte por dias sem venda — sempre, independente do ROAS
+  // 3+ dias = corte sempre; 2 dias = corte exceto ROAS >= 3.5 (ganha 1 dia de graça)
   if (daysWithoutSales >= 3) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
   if (daysWithoutSales >= 2 && roas < 3.5) return { decision: "PAUSAR", monitorarReason: null, pausarReason: "semVendas" };
   if (daysWithoutSales >= 2 && roas >= 3.5) return { decision: "MONITORAR", monitorarReason: "decaindo", pausarReason: null };
 
-  if (roas >= 2 && daysWithoutSales === 0) return { decision: "ESCALAR", monitorarReason: null, pausarReason: null };
-  if (roas >= 1) {
-    const reason = daysWithoutSales === 1 ? "decaindo" : "lucrativo";
-    return { decision: "MONITORAR", monitorarReason: reason, pausarReason: null };
-  }
+  // 1 dia sem vender — classificado pelo ROAS
+  if (daysWithoutSales === 1 && roas >= 3) return { decision: "MONITORAR", monitorarReason: "lucrativo", pausarReason: null };
+  if (daysWithoutSales === 1 && roas >= 2) return { decision: "MONITORAR", monitorarReason: "decaindo", pausarReason: null };
+
+  // Vendeu hoje — classificado pelo ROAS
+  if (daysWithoutSales === 0 && roas >= 3.5) return { decision: "ESCALAR", monitorarReason: null, pausarReason: null };
+  if (daysWithoutSales === 0 && roas >= 2) return { decision: "LUCRATIVO", monitorarReason: null, pausarReason: null };
+
+  // ROAS 1–2 (days=0 ou days=1) — ATENÇÃO: vendendo mas margem baixa
+  if (roas >= 1) return { decision: "ATENCAO", monitorarReason: null, pausarReason: null };
+
+  // ROAS < 1 — operando em prejuízo
   return { decision: "PAUSAR", monitorarReason: null, pausarReason: "prejuizo" };
 }
 
@@ -321,7 +328,7 @@ router.delete("/creatives/:id", requireAuth, async (req, res) => {
 
 function generateSyntheticHistory(
   baseDate: string,
-  decision: "ESCALAR" | "MONITORAR" | "PAUSAR",
+  decision: "ESCALAR" | "LUCRATIVO" | "MONITORAR" | "ATENCAO" | "PAUSAR",
   monitorarReason: "lucrativo" | "decaindo" | null,
   daysWithoutSales: number,
   totalSales: number,
@@ -332,6 +339,14 @@ function generateSyntheticHistory(
     // Growing trend — starts slow, accelerates
     const t = Math.max(1, totalSales);
     pattern = [0, 1, 1, Math.floor(t * 0.5), Math.ceil(t * 0.7), Math.ceil(t * 0.9), t];
+  } else if (decision === "LUCRATIVO") {
+    // Steady profitable — consistent daily sales
+    const t = Math.max(1, totalSales);
+    pattern = [t, t, Math.ceil(t * 0.8), t, Math.ceil(t * 0.9), t, t];
+  } else if (decision === "ATENCAO") {
+    // Low margin — erratic, some days zero
+    const t = Math.max(1, totalSales);
+    pattern = [0, t, 0, t, t, 0, t];
   } else if (decision === "PAUSAR") {
     // Declining then flat-zero for the last daysWithoutSales days
     const zeros = Math.min(daysWithoutSales, 4);

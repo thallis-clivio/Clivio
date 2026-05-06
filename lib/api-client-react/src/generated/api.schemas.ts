@@ -56,7 +56,9 @@ export type CreativeWithMetricsDecision =
 
 export const CreativeWithMetricsDecision = {
   ESCALAR: "ESCALAR",
+  LUCRATIVO: "LUCRATIVO",
   MONITORAR: "MONITORAR",
+  ATENCAO: "ATENCAO",
   PAUSAR: "PAUSAR",
 } as const;
 
@@ -232,7 +234,9 @@ export type ListCreativesDecision =
 
 export const ListCreativesDecision = {
   ESCALAR: "ESCALAR",
+  LUCRATIVO: "LUCRATIVO",
   MONITORAR: "MONITORAR",
+  ATENCAO: "ATENCAO",
   PAUSAR: "PAUSAR",
 } as const;
 
@@ -246,6 +250,7 @@ export const ListCreativesSortBy = {
   name: "name",
   cpa: "cpa",
   totalSales: "totalSales",
+  daysWithoutSales: "daysWithoutSales",
 } as const;
 
 export type ListCreativesSortOrder =

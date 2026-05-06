@@ -88,9 +88,19 @@ export const HealthCheckResponse = zod.object({
  * @summary List all creatives
  */
 export const ListCreativesQueryParams = zod.object({
-  decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]).optional(),
+  decision: zod
+    .enum(["ESCALAR", "LUCRATIVO", "MONITORAR", "ATENCAO", "PAUSAR"])
+    .optional(),
   sortBy: zod
-    .enum(["roas", "spend", "commission", "name", "cpa", "totalSales"])
+    .enum([
+      "roas",
+      "spend",
+      "commission",
+      "name",
+      "cpa",
+      "totalSales",
+      "daysWithoutSales",
+    ])
     .optional(),
   sortOrder: zod.enum(["asc", "desc"]).optional(),
   dateFilter: zod.enum(["daily", "weekly", "monthly", "all"]).optional(),
@@ -121,7 +131,13 @@ export const ListCreativesResponseItem = zod
       totalSales: zod.number(),
       predictabilityScore: zod.number(),
       predictabilityLabel: zod.enum(["EXCELENTE", "BOM", "RUIM"]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      decision: zod.enum([
+        "ESCALAR",
+        "LUCRATIVO",
+        "MONITORAR",
+        "ATENCAO",
+        "PAUSAR",
+      ]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
       ltvCommission: zod
@@ -179,7 +195,13 @@ export const GetCreativeResponse = zod
       totalSales: zod.number(),
       predictabilityScore: zod.number(),
       predictabilityLabel: zod.enum(["EXCELENTE", "BOM", "RUIM"]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      decision: zod.enum([
+        "ESCALAR",
+        "LUCRATIVO",
+        "MONITORAR",
+        "ATENCAO",
+        "PAUSAR",
+      ]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
       ltvCommission: zod
@@ -233,7 +255,13 @@ export const UpdateCreativeResponse = zod
       totalSales: zod.number(),
       predictabilityScore: zod.number(),
       predictabilityLabel: zod.enum(["EXCELENTE", "BOM", "RUIM"]),
-      decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+      decision: zod.enum([
+        "ESCALAR",
+        "LUCRATIVO",
+        "MONITORAR",
+        "ATENCAO",
+        "PAUSAR",
+      ]),
       monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
       pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
       ltvCommission: zod
@@ -336,7 +364,13 @@ export const GetDashboardSummaryResponse = zod.object({
         totalSales: zod.number(),
         predictabilityScore: zod.number(),
         predictabilityLabel: zod.enum(["EXCELENTE", "BOM", "RUIM"]),
-        decision: zod.enum(["ESCALAR", "MONITORAR", "PAUSAR"]),
+        decision: zod.enum([
+          "ESCALAR",
+          "LUCRATIVO",
+          "MONITORAR",
+          "ATENCAO",
+          "PAUSAR",
+        ]),
         monitorarReason: zod.enum(["lucrativo", "decaindo"]).nullish(),
         pausarReason: zod.enum(["semVendas", "prejuizo"]).nullish(),
         ltvCommission: zod
