@@ -625,13 +625,19 @@ components:
       properties:
         ESCALAR:
           type: integer
+        LUCRATIVO:
+          type: integer
         MONITORAR:
+          type: integer
+        ATENCAO:
           type: integer
         PAUSAR:
           type: integer
       required:
         - ESCALAR
+        - LUCRATIVO
         - MONITORAR
+        - ATENCAO
         - PAUSAR
 
     PerformanceSummary:
@@ -677,11 +683,15 @@ components:
           properties:
             ESCALAR:
               type: integer
+            LUCRATIVO:
+              type: integer
             MONITORAR:
+              type: integer
+            ATENCAO:
               type: integer
             PAUSAR:
               type: integer
-          required: [ESCALAR, MONITORAR, PAUSAR]
+          required: [ESCALAR, LUCRATIVO, MONITORAR, ATENCAO, PAUSAR]
         totalCreatives:
           type: integer
       required:

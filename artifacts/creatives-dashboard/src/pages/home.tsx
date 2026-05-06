@@ -3,9 +3,11 @@ import {
   useGetDashboardSummary, getGetDashboardSummaryQueryKey,
   useGetPerformanceSummary, getGetPerformanceSummaryQueryKey,
   useGetDashboardCharts, getGetDashboardChartsQueryKey,
+  useGetDecisionBreakdown, getGetDecisionBreakdownQueryKey,
 } from "@workspace/api-client-react";
 import {
   GetDashboardSummaryParams, GetDashboardChartsParams, GetPerformanceSummaryParams, PerformanceSummary,
+  DecisionBreakdown,
 } from "@workspace/api-client-react";
 import { DateRangePicker } from "@/components/date-range-picker";
 import { Layout } from "@/components/layout";
@@ -123,22 +125,93 @@ function PerformanceSummaryPanel({ data, isLoading }: { data?: PerformanceSummar
         <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2 mt-2">
           Situação dos Criativos
         </div>
-        <div className="grid grid-cols-3 gap-2">
-          <div className="flex flex-col items-center p-2.5 rounded-lg bg-green-500/10 border border-green-500/20">
-            <span className="text-2xl font-bold tabular-nums text-green-400">{data.decisions.ESCALAR}</span>
-            <span className="text-[10px] text-green-600 font-semibold mt-0.5">ESCALAR</span>
+        <div className="grid grid-cols-5 gap-1.5">
+          <div className="flex flex-col items-center p-2 rounded-lg bg-green-500/10 border border-green-500/20">
+            <span className="text-xl font-bold tabular-nums text-green-400">{data.decisions.ESCALAR}</span>
+            <span className="text-[9px] text-green-600 font-semibold mt-0.5 leading-tight text-center">ESCALAR</span>
           </div>
-          <div className="flex flex-col items-center p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-            <span className="text-2xl font-bold tabular-nums text-yellow-400">{data.decisions.MONITORAR}</span>
-            <span className="text-[10px] text-yellow-600 font-semibold mt-0.5">MONITOR.</span>
+          <div className="flex flex-col items-center p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+            <span className="text-xl font-bold tabular-nums text-emerald-400">{data.decisions.LUCRATIVO}</span>
+            <span className="text-[9px] text-emerald-600 font-semibold mt-0.5 leading-tight text-center">LUCRAT.</span>
           </div>
-          <div className="flex flex-col items-center p-2.5 rounded-lg bg-red-500/10 border border-red-500/20">
-            <span className="text-2xl font-bold tabular-nums text-red-400">{data.decisions.PAUSAR}</span>
-            <span className="text-[10px] text-red-600 font-semibold mt-0.5">PAUSAR</span>
+          <div className="flex flex-col items-center p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+            <span className="text-xl font-bold tabular-nums text-yellow-400">{data.decisions.MONITORAR}</span>
+            <span className="text-[9px] text-yellow-600 font-semibold mt-0.5 leading-tight text-center">MONIT.</span>
+          </div>
+          <div className="flex flex-col items-center p-2 rounded-lg bg-orange-500/10 border border-orange-500/20">
+            <span className="text-xl font-bold tabular-nums text-orange-400">{data.decisions.ATENCAO}</span>
+            <span className="text-[9px] text-orange-600 font-semibold mt-0.5 leading-tight text-center">ATENÇÃO</span>
+          </div>
+          <div className="flex flex-col items-center p-2 rounded-lg bg-red-500/10 border border-red-500/20">
+            <span className="text-xl font-bold tabular-nums text-red-400">{data.decisions.PAUSAR}</span>
+            <span className="text-[9px] text-red-600 font-semibold mt-0.5 leading-tight text-center">PAUSAR</span>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+const DECISION_CONFIG = [
+  { key: "ESCALAR",   label: "Escalar",   colorBg: "bg-green-500/10",   colorBorder: "border-green-500/20",   colorText: "text-green-400",   colorLabel: "text-green-600"   },
+  { key: "LUCRATIVO", label: "Lucrativo", colorBg: "bg-emerald-500/10", colorBorder: "border-emerald-500/20", colorText: "text-emerald-400", colorLabel: "text-emerald-600" },
+  { key: "MONITORAR", label: "Monitorar", colorBg: "bg-yellow-500/10",  colorBorder: "border-yellow-500/20",  colorText: "text-yellow-400",  colorLabel: "text-yellow-600"  },
+  { key: "ATENCAO",   label: "Atenção",   colorBg: "bg-orange-500/10",  colorBorder: "border-orange-500/20",  colorText: "text-orange-400",  colorLabel: "text-orange-600"  },
+  { key: "PAUSAR",    label: "Pausar",    colorBg: "bg-red-500/10",     colorBorder: "border-red-500/20",     colorText: "text-red-400",     colorLabel: "text-red-600"     },
+] as const;
+
+function DecisionBreakdownWidget({ data, isLoading }: { data?: DecisionBreakdown; isLoading: boolean }) {
+  const total = data ? Object.values(data).reduce((s, v) => s + v, 0) : 0;
+
+  return (
+    <Card className="border-border/50 bg-card/50">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Distribuição por Decisão</CardTitle>
+        <p className="text-xs text-muted-foreground">Estado atual de todos os criativos ativos</p>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="grid grid-cols-5 gap-3">
+            {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-20 w-full" />)}
+          </div>
+        ) : (
+          <div className="grid grid-cols-5 gap-3">
+            {DECISION_CONFIG.map(({ key, label, colorBg, colorBorder, colorText, colorLabel }) => {
+              const count = data?.[key as keyof DecisionBreakdown] ?? 0;
+              const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+              return (
+                <div
+                  key={key}
+                  className={`flex flex-col items-center gap-1 p-3 rounded-xl border ${colorBg} ${colorBorder}`}
+                  data-testid={`decision-${key.toLowerCase()}`}
+                >
+                  <span className={`text-3xl font-bold tabular-nums leading-none ${colorText}`}>{count}</span>
+                  <span className={`text-[10px] font-semibold uppercase tracking-wide ${colorLabel}`}>{label}</span>
+                  <span className="text-[10px] text-muted-foreground">{pct}%</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {!isLoading && total > 0 && (
+          <div className="mt-3 flex rounded-full overflow-hidden h-2">
+            {DECISION_CONFIG.map(({ key, colorText }) => {
+              const count = data?.[key as keyof DecisionBreakdown] ?? 0;
+              const pct = total > 0 ? (count / total) * 100 : 0;
+              if (pct === 0) return null;
+              const barColor = {
+                ESCALAR:   "bg-green-500",
+                LUCRATIVO: "bg-emerald-500",
+                MONITORAR: "bg-yellow-500",
+                ATENCAO:   "bg-orange-500",
+                PAUSAR:    "bg-red-500",
+              }[key];
+              return <div key={key} className={`${barColor} transition-all`} style={{ width: `${pct}%` }} title={`${key}: ${count}`} />;
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -162,6 +235,7 @@ export default function Home() {
       queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetDashboardChartsQueryKey() });
       queryClient.invalidateQueries({ queryKey: getGetPerformanceSummaryQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetDecisionBreakdownQueryKey() });
     } finally {
       setIsSeeding(false);
     }
@@ -182,6 +256,9 @@ export default function Home() {
   });
   const { data: chartData, isLoading: isChartLoading } = useGetDashboardCharts(dashParams, {
     query: { queryKey: getGetDashboardChartsQueryKey(dashParams) }
+  });
+  const { data: decisionBreakdown, isLoading: isBreakdownLoading } = useGetDecisionBreakdown(dashParams, {
+    query: { queryKey: getGetDecisionBreakdownQueryKey(dashParams) }
   });
 
   const formattedChartData = useMemo(() => {
@@ -318,6 +395,9 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Decision Breakdown */}
+        <DecisionBreakdownWidget data={decisionBreakdown} isLoading={isBreakdownLoading} />
 
         {/* Chart + Performance Summary */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">

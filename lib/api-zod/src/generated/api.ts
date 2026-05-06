@@ -394,7 +394,9 @@ export const GetDecisionBreakdownQueryParams = zod.object({
 
 export const GetDecisionBreakdownResponse = zod.object({
   ESCALAR: zod.number(),
+  LUCRATIVO: zod.number(),
   MONITORAR: zod.number(),
+  ATENCAO: zod.number(),
   PAUSAR: zod.number(),
 });
 
@@ -432,7 +434,9 @@ export const GetPerformanceSummaryResponse = zod.object({
     .nullish(),
   decisions: zod.object({
     ESCALAR: zod.number(),
+    LUCRATIVO: zod.number(),
     MONITORAR: zod.number(),
+    ATENCAO: zod.number(),
     PAUSAR: zod.number(),
   }),
   totalCreatives: zod.number(),

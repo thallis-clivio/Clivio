@@ -108,7 +108,9 @@ export interface DashboardSummary {
 
 export interface DecisionBreakdown {
   ESCALAR: number;
+  LUCRATIVO: number;
   MONITORAR: number;
+  ATENCAO: number;
   PAUSAR: number;
 }
 
@@ -133,7 +135,9 @@ export type PerformanceSummaryMostSales = {
 
 export type PerformanceSummaryDecisions = {
   ESCALAR: number;
+  LUCRATIVO: number;
   MONITORAR: number;
+  ATENCAO: number;
   PAUSAR: number;
 };
 
