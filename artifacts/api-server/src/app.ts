@@ -1,10 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
-import * as pinoHttp from "pino-http";
 import { clerkMiddleware } from "@clerk/express";
 import { publishableKeyFromHost } from "@clerk/shared/keys";
 import router from "./routes";
-import { logger } from "./lib/logger";
 import {
   CLERK_PROXY_PATH,
   clerkProxyMiddleware,
@@ -12,26 +10,6 @@ import {
 } from "./middlewares/clerkProxyMiddleware";
 
 const app: Express = express();
-
-app.use(
-  (pinoHttp as any).default({ 
-    logger,
-    serializers: {
-      req(req: any) {
-        return {
-          id: req.id,
-          method: req.method,
-          url: req.url?.split("?")[0],
-        };
-      },
-      res(res: any) {
-        return {
-          statusCode: res.statusCode,
-        };
-      },
-    },
-  }),
-);
 
 app.use(CLERK_PROXY_PATH, clerkProxyMiddleware());
 app.use(cors({ credentials: true, origin: true }));
